@@ -1,6 +1,6 @@
 # Flashbots searcher-minter
 
-This repository contains a very simple demo application of (Flashbots)[https://docs.flashbots.net], which allows arbitrary submission of a single transaction to Flashbots. This could be used for many simple purposes, but in the demonstration, the goal was to mint an NFT.
+This repository contains a very simple demo application of [Flashbots](https://docs.flashbots.net), which allows arbitrary submission of a single transaction to Flashbots. This could be used for many simple purposes, but in the demonstration, the goal was to mint an NFT.
 
 # Video Live Coding Demo
 
