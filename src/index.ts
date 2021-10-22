@@ -6,6 +6,8 @@ const provider = new providers.InfuraProvider(CHAIN_ID)
 
 const FLASHBOTS_ENDPOINT = "https://relay-goerli.flashbots.net";
 
+require('dotenv').config();
+
 if (process.env.WALLET_PRIVATE_KEY === undefined) {
   console.error("Please provide WALLET_PRIVATE_KEY env")
   process.exit(1)
