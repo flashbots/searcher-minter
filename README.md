@@ -1,14 +1,27 @@
-# Flashbots searcher-minter
+# <h1 align="center"> Yobot Searcher </h1>
 
-This repository contains a very simple demo application of [Flashbots](https://docs.flashbots.net), which allows arbitrary submission of a single transaction to Flashbots. This could be used for many simple purposes, but in the demonstration, the goal was to mint an NFT.
+Yobot Searcher is a Typescript server that posts flashbot bundles for executing [Yobot](https://yobot.co) bids.
 
-# Video Live Coding Demo
+<div align="center">
+
+![Lints](https://github.com/nascentxyz/yobot-searcher/workflows/Linting/badge.svg)
+![Tests](https://github.com/nascentxyz/yobot-searcher/workflows/Tests/badge.svg)
+
+</div>
+
+
+## Credits
+
+- [Forked searcher-minter repo](https://github.com/flashbots/searcher-minter) built by the amazing team at [Flashbots](https://flashbots.org).
+- [Artbotter](https://artbotter.io) for inspiring [Yobot](https://yobot.co) and providing generous amounts of their time and resources.
+
+## Video Live Coding Demo
 
 You can find a walkthrough of Flashbots and the creation of this NFT minting bot here:
 
 [YouTube - Using Flashbots to Mint NFTs on Ethereum - Part 1](https://www.youtube.com/watch?v=1ve1YIpDs_I)
 
-# How to run
+## How to run
 
 Get some [Goerli](https://goerli.etherscan.io/) ETH on a wallet (you'll need a [faucet](https://faucet.goerli.mudit.blog/)). Extract that Goerli wallet's private key (in MetaMask `Account Details -> Export Private Key`), use that value below for `WALLET_PRIVATE_KEY`.
 
@@ -19,11 +32,11 @@ npm install
 WALLET_PRIVATE_KEY=0x1d9af4................ npx ts-node src/index.ts
 ```
 
-# Goerli Contract Addresses
+## Goerli Contract Addresses
 
 * WasteGas: `0x957B500673A4919C9394349E6bbD1A66Dc7E5939`
 * FakeArtMinter: `0x20EE855E43A7af19E407E39E5110c2C1Ee41F64D`
 
-# Where can I learn more?
+## Where can I learn more?
 
 Check out [docs.flashbots.net](https://docs.flashbots.net).

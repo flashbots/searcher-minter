@@ -1,12 +1,14 @@
 {
-  "name": "searcher-minter",
+  "name": "yobot-searcher",
   "version": "1.0.0",
-  "description": "",
+  "description": "Yobot Searcher is a Typescript server that posts flashbot bundles for executing [Yobot](https://yobot.co) bids.",
+  "authors": [
+    "Andreas Bigger <andreas@nascent.xyz>"
+  ],
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^16.7.2",
