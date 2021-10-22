@@ -1,6 +1,6 @@
 # <h1 align="center"> Yobot Searcher </h1>
 
-<p align="center">Yobot Searcher is a Typescript server that posts flashbot bundles for executing [Yobot](https://yobot.co) bids.</p>
+<p align="center">Yobot Searcher is a Typescript server that posts flashbot bundles for executing <a href="https://yobot.co">Yobot</a> bids.</p>
 
 <div align="center">
 
