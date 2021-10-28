@@ -10,7 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx ts-node src/index.ts"
   },
-  "license": "ISC",
+  "license": "Unlicense",
   "devDependencies": {
     "@types/node": "^16.7.2",
     "dotenv": "^10.0.0",
