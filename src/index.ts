@@ -6,7 +6,7 @@ import { DeployedContracts } from "./utils";
 require('dotenv').config();
 
 // ** Default to Goerli if no chain id provided **
-const CHAIN_ID = process.env.CHAIN_ID ? process.env.CHAIN_ID : 5;
+const CHAIN_ID = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID) : 5;
 const provider = new providers.InfuraProvider(CHAIN_ID)
 
 const FLASHBOTS_ENDPOINT = "https://relay-goerli.flashbots.net";
@@ -33,7 +33,7 @@ async function main() {
   const flashbotsProvider = await FlashbotsBundleProvider.create(provider, Wallet.createRandom(), FLASHBOTS_ENDPOINT)
   provider.on('block', async (blockNumber) => {
     console.log(blockNumber)
-    
+
     const bundleSubmitResponse = await flashbotsProvider.sendBundle(
       [
         {
@@ -61,4 +61,4 @@ async function main() {
   })
 }
 
-main();
+// main();
