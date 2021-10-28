@@ -39,10 +39,44 @@ yarn
 WALLET_PRIVATE_KEY=0x1d9af4................ yarn start
 ```
 
-## Goerli Contract Addresses
+## General Docs
 
-* WasteGas: `0x957B500673A4919C9394349E6bbD1A66Dc7E5939`
-* FakeArtMinter: `0x20EE855E43A7af19E407E39E5110c2C1Ee41F64D`
+
+### fillOrder - How to use
+
+The `_user` is the user's address.
+The `_tokenAddress` is the address of the NFT's ERC721 contract.
+The `_tokenId` is the ID of the token you're giving to the user to fill their order.
+
+The `_expectedPriceInWeiEach` is the price per NFT you got from the user's order. Tthe purpose of this is to make sure the user didn't reduce their offer between the time you bought the NFT and the time you fill their order. If they did, then your attempt to fill will revert (to prevent you from losing money).
+
+The `_profitTo` and` _sendNow` arguments determine whether or not you get paid for your ordering filling now or later.
+
+If you set `_sendNow` to true, then when you fill the order, the user's money will be transferred instantly (same transaction) to whatever you set as the `_profitTo` address.
+
+(You should always set `_sendNow` to true).
+
+
+## Deployed Contracts
+
+### Mainnet
+
+// TODO
+
+### Rinkeby
+
+**YobotERC721LimitOrder** deployed and verified on rinkeby at [0x8b5842a935731ed1b92e3211a7f38bebd185eb53](https://rinkeby.etherscan.io/address/0x8b5842a935731ed1b92e3211a7f38bebd185eb53#code)
+
+**YobotArtBlocksBroker** Deployed and verified on rinkeby at: [0x1b78c74b301aa66c3da90556be7290eb2dcc2864](https://rinkeby.etherscan.io/address/0x1b78c74b301aa66c3da90556be7290eb2dcc2864#code)
+
+### Goerli
+
+**YobotERC721LimitOrder** deployed and verified on goerli at [0x0d29790c2412f42248905f879260f1a6f409a11a](https://goerli.etherscan.io/address/0x0d29790c2412f42248905f879260f1a6f409a11a#code)
+
+**YobotArtBlocksBroker** Deployed and verified on goerli at: [0x041761ca2d7730ae3788f732c1a43db002feff2f](https://goerli.etherscan.io/address/0x041761ca2d7730ae3788f732c1a43db002feff2f#code)
+
+**WasteGas**: `0x957B500673A4919C9394349E6bbD1A66Dc7E5939`
+**FakeArtMinter**: `0x20EE855E43A7af19E407E39E5110c2C1Ee41F64D`
 
 ## Where can I learn more?
 

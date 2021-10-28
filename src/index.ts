@@ -1,23 +1,34 @@
 import { providers, Wallet } from "ethers";
 import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
 
-const CHAIN_ID = 5;
+import { DeployedContracts } from "./utils";
+
+require('dotenv').config();
+
+// ** Default to Goerli if no chain id provided **
+const CHAIN_ID = process.env.CHAIN_ID ? process.env.CHAIN_ID : 5;
 const provider = new providers.InfuraProvider(CHAIN_ID)
 
 const FLASHBOTS_ENDPOINT = "https://relay-goerli.flashbots.net";
 
-require('dotenv').config();
-
+// ** We need the WALLET PRIVATE KEY **
 if (process.env.WALLET_PRIVATE_KEY === undefined) {
   console.error("Please provide WALLET_PRIVATE_KEY env")
   process.exit(1)
 }
+
 const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, provider)
 
-// ethers.js can use Bignumber.js class OR the JavaScript-native bigint. I changed this to bigint as it is MUCH easier to deal with
+// ** Import the Abis **
+const YobotERC721LimitOrderAbi = require("src/abi/YobotERC721LimitOrderAbi.json");
+const YobotArtBlocksBrokerAbi = require("src/abi/YobotArtBlocksBrokerAbi.json");
+
+// ** ethers.js can use Bignumber.js class OR the JavaScript-native bigint **
+// ** I changed this to bigint as it is MUCH easier to deal with **
 const GWEI = 10n ** 9n
 const ETHER = 10n ** 18n
 
+// ** Main Function **
 async function main() {
   const flashbotsProvider = await FlashbotsBundleProvider.create(provider, Wallet.createRandom(), FLASHBOTS_ENDPOINT)
   provider.on('block', async (blockNumber) => {
