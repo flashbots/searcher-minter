@@ -1,7 +1,10 @@
 import { providers, Wallet } from "ethers";
-import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
+import * as ethers from "ethers"
 
-import { DeployedContracts } from "./utils";
+import {
+  DeployedContracts,
+  sendFlashbotsBundle
+} from "./utils";
 
 require('dotenv').config();
 
@@ -23,42 +26,35 @@ const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, provider)
 const YobotERC721LimitOrderAbi = require("src/abi/YobotERC721LimitOrderAbi.json");
 const YobotArtBlocksBrokerAbi = require("src/abi/YobotArtBlocksBrokerAbi.json");
 
+// ** Instantiate Contracts and Interfaces **
+const YobotERC721LimitOrderInterface = new ethers.utils.Interface(YobotERC721LimitOrderAbi)
+const YobotERC721LimitOrderContract = new ethers.Contract(DeployedContracts[CHAIN_ID]["YobotERC721LimitOrder"], YobotERC721LimitOrderAbi, provider)
+
+const YobotArtBlocksBrokerInterface = new ethers.utils.Interface(YobotArtBlocksBrokerAbi)
+const YobotArtBlocksBrokerContract = new ethers.Contract(DeployedContracts[CHAIN_ID]["YobotArtBlocksBroker"], YobotArtBlocksBrokerAbi, provider)
+
 // ** ethers.js can use Bignumber.js class OR the JavaScript-native bigint **
 // ** I changed this to bigint as it is MUCH easier to deal with **
-const GWEI = 10n ** 9n
-const ETHER = 10n ** 18n
+const GWEI: bigint = 10n ** 9n;
+const ETHER: bigint = 10n ** 18n;
+
+// ** Filter From Block Number **
+const filterStartBlock = 13097324;
+
+
+
 
 // ** Main Function **
 async function main() {
-  const flashbotsProvider = await FlashbotsBundleProvider.create(provider, Wallet.createRandom(), FLASHBOTS_ENDPOINT)
-  provider.on('block', async (blockNumber) => {
-    console.log(blockNumber)
-
-    const bundleSubmitResponse = await flashbotsProvider.sendBundle(
-      [
-        {
-          transaction: {
-            chainId: CHAIN_ID,
-            type: 2,
-            value: ETHER / 100n * 3n,
-            data: "0x1249c58b",
-            maxFeePerGas: GWEI * 3n,
-            maxPriorityFeePerGas: GWEI * 2n,
-            to: "0x20EE855E43A7af19E407E39E5110c2C1Ee41F64D"
-          },
-          signer: wallet
-        }
-      ], blockNumber + 1
-    )
-
-    // By exiting this function (via return) when the type is detected as a "RelayResponseError", TypeScript recognizes bundleSubmitResponse must be a success type object (FlashbotsTransactionResponse) after the if block.
-    if ('error' in bundleSubmitResponse) {
-      console.warn(bundleSubmitResponse.error.message)
-      return
-    }
-
-    console.log(await bundleSubmitResponse.simulate())
-  })
+  
+  // await sendFlashbotsBundle(
+  //   provider,
+  //   FLASHBOTS_ENDPOINT,
+  //   CHAIN_ID,
+  //   ETHER,
+  //   GWEI,
+  //   wallet,
+  // );
 }
 
 // main();
