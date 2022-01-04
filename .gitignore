@@ -1,3 +1,7 @@
+
+# Ignore environment variables
+.env
+
 lib-cov
 *.seed
 *.log
