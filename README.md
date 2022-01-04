@@ -1,15 +1,7 @@
-# <h1 align="center"> Yobot Searcher </h1>
+# yobot-searcher • [![tests](https://github.com/nascentxyz/yobot-searcher/actions/workflows/test.yml/badge.svg)](https://github.com/nascentxyz/yobot-searcher/actions/workflows/test.yml) [![lints](https://github.com/nascentxyz/yobot-searcher/actions/workflows/lint.yml/badge.svg)](https://github.com/nascentxyz/yobot-searcher/actions/workflows/lint.yml) ![GitHub](https://img.shields.io/github/license/nascentxyz/yobot-searcher) ![GitHub package.json version](https://img.shields.io/github/package-json/v/nascentxyz/yobot-searcher)
+
 
 <p align="center">Yobot Searcher is a Typescript server that posts flashbot bundles for executing <a href="https://yobot.co">Yobot</a> bids.</p>
-
-<div align="center">
-
-![Lints](https://github.com/nascentxyz/yobot-searcher/workflows/lint/badge.svg)
-![Tests](https://github.com/nascentxyz/yobot-searcher/workflows/test/badge.svg)
-
-</div>
-
-
 ## Credits
 
 - [Forked searcher-minter repo](https://github.com/flashbots/searcher-minter) built by the amazing team at [Flashbots](https://flashbots.org).

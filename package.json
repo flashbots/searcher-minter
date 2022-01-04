@@ -10,7 +10,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx ts-node src/index.ts"
   },
-  "license": "Unlicense",
+  "license": "The Unlicense",
   "devDependencies": {
     "@types/node": "^16.7.2",
     "commitlint": "^16.0.1",
