@@ -4,8 +4,8 @@
 
 <div align="center">
 
-![Lints](https://github.com/nascentxyz/yobot-searcher/workflows/Linting/badge.svg)
-![Tests](https://github.com/nascentxyz/yobot-searcher/workflows/Tests/badge.svg)
+![Lints](https://github.com/nascentxyz/yobot-searcher/workflows/lint/badge.svg)
+![Tests](https://github.com/nascentxyz/yobot-searcher/workflows/test/badge.svg)
 
 </div>
 
