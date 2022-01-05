@@ -8,6 +8,7 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "baseUrl": "src",
   },
   "include": [
     "**/*.ts",
