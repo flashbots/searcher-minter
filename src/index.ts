@@ -6,7 +6,7 @@ import * as ethers from 'ethers';
 
 import {
   configure,
-  getAllERC721LimitOrderEvents,
+  fetchAllERC721LimitOrderEvents,
   // sendFlashbotsBundle,
 } from './utils';
 
@@ -25,7 +25,7 @@ const filterStartBlock = 0;
 
 // ** Main Function ** //
 async function main() {
-  const allEvents = await getAllERC721LimitOrderEvents(
+  const allEvents = await fetchAllERC721LimitOrderEvents(
     YobotERC721LimitOrderContract,
     filterStartBlock,
     provider,
