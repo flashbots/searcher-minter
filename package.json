@@ -17,10 +17,10 @@
     "prepare": "husky install",
     "start": "npx ts-node src/index.ts"
   },
-  "license": "The Unlicense",
+  "license": "Unlicense",
   "dependencies": {
-    "dotenv": "^10.0.0",
     "@flashbots/ethers-provider-bundle": "0.4.1",
+    "dotenv": "^10.0.0",
     "ethers": "5.4.5"
   },
   "devDependencies": {
@@ -30,7 +30,9 @@
     "commitlint": "^16.0.1",
     "eslint": "^8.6.0",
     "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^16.1.0",
     "eslint-import-resolver-node": "^0.3.6",
+    "eslint-plugin-import": "^2.25.4",
     "husky": "^7.0.4",
     "lint-staged": "^12.1.5",
     "prettier": "^2.5.1",

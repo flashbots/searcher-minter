@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable max-len */
 /* eslint-disable no-console */
 import { providers, Wallet } from 'ethers';
@@ -7,7 +8,7 @@ import {
   DeployedContracts,
   getAllERC721LimitOrderEvents,
   // sendFlashbotsBundle,
-} from 'src/utils';
+} from './utils';
 
 require('dotenv').config();
 
@@ -25,7 +26,6 @@ if (process.env.INFURA_PROJECT_ID === undefined) {
 
 const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
 
-// eslint-disable-next-line no-unused-vars
 const FLASHBOTS_ENDPOINT = 'https://relay-goerli.flashbots.net';
 
 // ** We need the WALLET PRIVATE KEY **
@@ -83,12 +83,7 @@ const filterStartBlock = 0;
 
 // ** Main Function **
 async function main() {
-  const allEvents = await getAllERC721LimitOrderEvents(
-    YobotERC721LimitOrderContract,
-    filterStartBlock,
-    provider,
-    YobotERC721LimitOrderInterface,
-  );
+  const allEvents = await getAllERC721LimitOrderEvents(YobotERC721LimitOrderContract, filterStartBlock, provider, YobotERC721LimitOrderInterface);
 
   console.log(allEvents);
   // await sendFlashbotsBundle(
