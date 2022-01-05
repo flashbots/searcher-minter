@@ -1,7 +1,12 @@
 import { providers } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';
 
-const getAllERC721LimitOrderEvents = async function (ERC721LimitOrderContract, filterStartBlock: number, provider: providers.InfuraProvider, ERC721LimitOrderInterface: any) {
+const getAllERC721LimitOrderEvents = async function (
+  ERC721LimitOrderContract: any,
+  filterStartBlock: number,
+  provider: providers.InfuraProvider,
+  ERC721LimitOrderInterface: any
+) {
   // get all events from the ERC721LimitOrder contract
   console.log('Fetching all erc721 events...');
   const filter = ERC721LimitOrderContract.filters.Action();

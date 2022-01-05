@@ -1,5 +1,17 @@
+type ContractList = {
+  YobotArtBlocksBroker: string,
+  YobotERC721LimitOrder: string,
+};
+
+type DeployedContractsType = {
+  1: ContractList,
+  3: ContractList,
+  4: ContractList,
+  5: ContractList,
+};
+
 // ** Define our deployed contract addresses **
-const DeployedContracts = {
+const DeployedContracts: DeployedContractsType = {
   // mainnet
   1: {
     YobotArtBlocksBroker: '',
@@ -22,4 +34,19 @@ const DeployedContracts = {
   },
 };
 
-export default DeployedContracts;
+const getDeployedContract = (network: number) => {
+  switch (network) {
+    case 1:
+      return DeployedContracts[1];
+    case 3:
+      return DeployedContracts[3];
+    case 4:
+      return DeployedContracts[4];
+    case 5:
+      return DeployedContracts[5];
+    default:
+      throw new Error(`Unknown network: ${network}`);
+  }
+}
+
+export default getDeployedContract;

@@ -17,6 +17,7 @@
         "@typescript-eslint"
     ],
     "rules": {
+        "code": "200",
         "react/jsx-filename-extension": [
             0
         ],

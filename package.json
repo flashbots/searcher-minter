@@ -15,6 +15,7 @@
     "release": "standard-version",
     "push-release": "git push --follow-tags origin main",
     "prepare": "husky install",
+    "test": "jest",
     "start": "npx ts-node src/index.ts"
   },
   "license": "Unlicense",
@@ -24,6 +25,7 @@
     "ethers": "5.4.5"
   },
   "devDependencies": {
+    "@types/jest": "^27.4.0",
     "@types/node": "^16.7.2",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.9.0",
@@ -34,8 +36,10 @@
     "eslint-import-resolver-node": "^0.3.6",
     "eslint-plugin-import": "^2.25.4",
     "husky": "^7.0.4",
+    "jest": "^27.4.7",
     "lint-staged": "^12.1.5",
     "prettier": "^2.5.1",
+    "ts-jest": "^27.1.2",
     "ts-node": "^10.2.1",
     "tslib": "^2.3.1",
     "typescript": "^4.3.5"
