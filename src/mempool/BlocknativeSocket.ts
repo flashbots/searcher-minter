@@ -1,4 +1,4 @@
-const Blocknative = require('bnc-sdk')
+const Blocknative = require('bnc-sdk');
 
 require('dotenv').config();
 
@@ -6,7 +6,7 @@ require('dotenv').config();
 const handleTransaction = (event: any) => {
   const {
     transaction, // ** transaction object **
-    emitterResult // ** data that is returned from the transaction event listener defined on the emitter **
+    emitterResult, // ** data that is returned from the transaction event listener defined on the emitter **
   } = event;
 
   // const {
@@ -16,20 +16,18 @@ const handleTransaction = (event: any) => {
   console.log(transaction);
   console.log(`Transaction status: ${transaction.status}`);
 
-  if(transaction.status === 'confirmed') {
+  if (transaction.status === 'confirmed') {
     console.log(`Transaction ${transaction} confirmed`);
-    console.log("Sending flashbots bundle...");
+    console.log('Sending flashbots bundle...');
 
     // TODO: Submit a mint transaction
   }
-}
-
+};
 
 const listenNewBlocksBlocknative = async (
   address: string,
-  chain_id: string | number // chain id can be parsed as a network name or chain number
+  chain_id: string | number, // chain id can be parsed as a network name or chain number
 ) => {
-
   const options = {
     dappId: process.env.BLOCKNATIVE_API_KEY,
     networkId: chain_id,
@@ -37,13 +35,15 @@ const listenNewBlocksBlocknative = async (
     ws: WebSocket,
     name: 'Yobot Searcher', // optional use for managing multiple instances
     transactionHandlers: [handleTransaction],
-    onerror: (error: any) => {console.log("BlockNative SDK ERROR:", error)} // optional, use to catch errors
-  }
+    onerror: (error: any) => {
+      console.log('BlockNative SDK ERROR:', error);
+    }, // optional, use to catch errors
+  };
 
   // YobotERC721LimitOrderContractAddress
-  const AttachedAddress = "0x3b4a7f92ee992ffb71ddd367f2702fbaa3d64f4b";
+  const AttachedAddress = '0x3b4a7f92ee992ffb71ddd367f2702fbaa3d64f4b';
 
-  console.log("Instantiating Blocknative SDK...");
+  console.log('Instantiating Blocknative SDK...');
   const sdk = new Blocknative(options);
   await sdk.configuration({
     scope: address, // [required] - either 'global' or valid Ethereum address
@@ -53,9 +53,8 @@ const listenNewBlocksBlocknative = async (
     //   { "contractCall.methodName": "flipSaleState" },
     //   { status: "pending" }
     // ],
-    watchAddress: true // [optional] - Whether the server should automatically watch the "scope" value if it is an address
-  })
-
-}
+    watchAddress: true, // [optional] - Whether the server should automatically watch the "scope" value if it is an address
+  });
+};
 
 export default listenNewBlocksBlocknative;

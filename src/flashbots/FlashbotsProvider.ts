@@ -1,21 +1,15 @@
-import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
+import { FlashbotsBundleProvider } from '@flashbots/ethers-provider-bundle';
 import { Web3Provider, InfuraProvider } from '@ethersproject/providers';
-import { providers, Wallet } from "ethers";
+import { Wallet } from 'ethers';
 
 const createFlashbotsProvider = async (
   provider: Web3Provider | InfuraProvider,
   flashbots_endpoint: string,
-  wallet: Wallet
+  wallet: Wallet,
 ): Promise<FlashbotsBundleProvider> => {
-
   // ** Create Flashbots Provider ** //
-  const defaultGoerliProvider = providers.getDefaultProvider('goerli')
-  const flashbotsProvider = await FlashbotsBundleProvider.create(
-    defaultGoerliProvider,
-    wallet,
-    flashbots_endpoint,
-    'goerli'
-  );
+  // const defaultGoerliProvider = providers.getDefaultProvider('goerli');
+  const flashbotsProvider = await FlashbotsBundleProvider.create(provider, wallet, flashbots_endpoint, 'goerli');
 
   return flashbotsProvider;
 };

@@ -20,6 +20,7 @@
   },
   "license": "Unlicense",
   "dependencies": {
+    "@ethersproject/providers": "^5.5.1",
     "@flashbots/ethers-provider-bundle": "0.4.1",
     "bignumber.js": "^9.0.2",
     "bnc-sdk": "^3.7.0",

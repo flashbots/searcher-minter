@@ -1,4 +1,5 @@
-export { default as configure } from "./configure";
+/* eslint-disable import/no-cycle */
+export { default as configure } from './configure';
 export { default as getDeployedContract } from './DeployedContracts';
 
 // FLASHBOTS

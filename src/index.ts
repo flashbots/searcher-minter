@@ -14,23 +14,14 @@ require('dotenv').config();
 
 console.log('Yobot Searcher starting...');
 
-const {
-  provider,
-  YobotERC721LimitOrderContract,
-  YobotERC721LimitOrderInterface
-} = configure();
+const { provider, YobotERC721LimitOrderContract, YobotERC721LimitOrderInterface } = configure();
 
 // ** Filter From Block Number ** //
 const filterStartBlock = 0;
 
 // ** Main Function ** //
 async function main() {
-  const allEvents = await fetchAllERC721LimitOrderEvents(
-    YobotERC721LimitOrderContract,
-    filterStartBlock,
-    provider,
-    YobotERC721LimitOrderInterface
-  );
+  const allEvents = await fetchAllERC721LimitOrderEvents(YobotERC721LimitOrderContract, filterStartBlock, provider, YobotERC721LimitOrderInterface);
 
   console.log(allEvents);
   // await sendFlashbotsBundle(

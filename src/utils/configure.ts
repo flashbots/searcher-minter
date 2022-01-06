@@ -1,12 +1,13 @@
-import { Wallet, providers } from "ethers";
+/* eslint-disable max-len */
+/* eslint-disable global-require */
+import { Wallet, providers, BigNumber } from 'ethers';
 import * as ethers from 'ethers';
 
-import { getDeployedContract } from './';
+import { getDeployedContract } from '.';
 
 require('dotenv').config();
 
 const configure = () => {
-
   // ** Default to Goerli if no chain id provided **
   const CHAIN_ID = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID, 10) : 5;
   console.log('Using CHAIN ID:', CHAIN_ID);
@@ -19,7 +20,7 @@ const configure = () => {
 
   const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
 
-  const flashbots_endpoint = 'https://relay-goerli.flashbots.net';
+  const flashbotsEndpoint = 'https://relay-goerli.flashbots.net';
 
   // ** We need the WALLET PRIVATE KEY **
   if (process.env.WALLET_PRIVATE_KEY === undefined) {
@@ -29,12 +30,12 @@ const configure = () => {
 
   console.log('Found a wallet!');
 
-  const defaultGoerliProvider = providers.getDefaultProvider('goerli')
+  const defaultGoerliProvider = providers.getDefaultProvider('goerli');
   const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, defaultGoerliProvider);
 
   // ** Import the Abis **
   const YobotERC721LimitOrderAbi = require('../abi/YobotERC721LimitOrder.json');
-  const YobotArtBlocksBrokerAbi = require('../abi/YobotArtBlocksBroker.json');
+  // const YobotArtBlocksBrokerAbi = require('../abi/YobotArtBlocksBroker.json');
 
   // ** Instantiate Interfaces **
   const YobotERC721LimitOrderInterface = new ethers.utils.Interface(YobotERC721LimitOrderAbi);
@@ -53,20 +54,20 @@ const configure = () => {
     }
   })();
 
-  // eslint-disable-next-line no-unused-vars
-  const YobotArtBlocksBrokerInterface = new ethers.utils.Interface(YobotArtBlocksBrokerAbi);
+  // const YobotArtBlocksBrokerInterface = new ethers.utils.Interface(YobotArtBlocksBrokerAbi);
 
   // ** Instantiate Contracts **
   const YobotERC721LimitOrderContract = new ethers.Contract(YobotERC721LimitOrderContractAddress, YobotERC721LimitOrderAbi, provider);
-  // eslint-disable-next-line no-unused-vars
-  const YobotArtBlocksBrokerContract = new ethers.Contract(getDeployedContract(CHAIN_ID).YobotArtBlocksBroker, YobotArtBlocksBrokerAbi, provider);
+  // const YobotArtBlocksBrokerContract = new ethers.Contract(getDeployedContract(CHAIN_ID).YobotArtBlocksBroker, YobotArtBlocksBrokerAbi, provider);
 
   // ** ethers.js can use Bignumber.js class OR the JavaScript-native bigint **
   // ** I changed this to bigint as it is MUCH easier to deal with **
-  // eslint-disable-next-line no-unused-vars
-  const GWEI: bigint = 10n ** 9n;
-  // eslint-disable-next-line no-unused-vars
-  const ETHER: bigint = 10n ** 18n;
+  // const ETHER: bigint = 10n ** 18n;
+
+  const GWEI = BigNumber.from(10).pow(9);
+  const PRIORITY_FEE = GWEI.mul(3);
+  const LEGACY_GAS_PRICE = GWEI.mul(12);
+  const BLOCKS_TILL_INCLUSION = 2;
 
   // ** Create a new ethers provider **
   // const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
@@ -75,10 +76,14 @@ const configure = () => {
     provider,
     wallet,
     CHAIN_ID,
-    flashbots_endpoint,
+    GWEI,
+    PRIORITY_FEE,
+    LEGACY_GAS_PRICE,
+    BLOCKS_TILL_INCLUSION,
+    flashbotsEndpoint,
     YobotERC721LimitOrderContract,
-    YobotERC721LimitOrderInterface
-  }
-}
+    YobotERC721LimitOrderInterface,
+  };
+};
 
 export default configure;

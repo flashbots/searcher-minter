@@ -8,12 +8,12 @@ const sendFlashbotsBundle = async (
   CHAIN_ID: number,
   ETHER: bigint,
   GWEI: bigint,
-  wallet: Wallet
+  wallet: Wallet,
 ) => {
   const flashbotsProvider = await FlashbotsBundleProvider.create(
     provider,
     Wallet.createRandom(),
-    FLASHBOTS_ENDPOINT
+    FLASHBOTS_ENDPOINT,
   );
 
   provider.on('block', async (blockNumber) => {
