@@ -12,5 +12,13 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: 14
-    - run: yarn
-    - run: yarn lint
+    - name: Load Environment Variables
+      env:
+        INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
+        CHAIN_ID: ${{ secrets.CHAIN_ID }}
+        WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
+        BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
+    - name: Install Dependencies
+      run: yarn
+    - name: Run Lints
+      run: yarn lint
