@@ -19,7 +19,7 @@ const configure = () => {
 
   const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
 
-  const FLASHBOTS_ENDPOINT = 'https://relay-goerli.flashbots.net';
+  const flashbots_endpoint = 'https://relay-goerli.flashbots.net';
 
   // ** We need the WALLET PRIVATE KEY **
   if (process.env.WALLET_PRIVATE_KEY === undefined) {
@@ -29,8 +29,8 @@ const configure = () => {
 
   console.log('Found a wallet!');
 
-  // eslint-disable-next-line no-unused-vars
-  const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, provider);
+  const defaultGoerliProvider = providers.getDefaultProvider('goerli')
+  const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, defaultGoerliProvider);
 
   // ** Import the Abis **
   const YobotERC721LimitOrderAbi = require('../abi/YobotERC721LimitOrder.json');
@@ -73,6 +73,9 @@ const configure = () => {
 
   return {
     provider,
+    wallet,
+    CHAIN_ID,
+    flashbots_endpoint,
     YobotERC721LimitOrderContract,
     YobotERC721LimitOrderInterface
   }

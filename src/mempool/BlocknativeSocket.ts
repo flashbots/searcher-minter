@@ -57,3 +57,5 @@ const listenNewBlocksBlocknative = async (
   })
 
 }
+
+export default listenNewBlocksBlocknative;

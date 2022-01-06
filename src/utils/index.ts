@@ -2,7 +2,7 @@ export { default as configure } from "./configure";
 export { default as getDeployedContract } from './DeployedContracts';
 
 // FLASHBOTS
-export { default as sendFlashbotsBundle } from './SendFlashbotsBundle';
+export { default as sendFlashbotsBundle } from '../flashbots/SendBundle';
 
 // CONTRACT INTERACTION
 export { default as callOrders } from './CallOrders';
