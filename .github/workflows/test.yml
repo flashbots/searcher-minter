@@ -12,14 +12,12 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: 14
-    - name: Load Environment Variables
+    - name: Install Dependencies
+      run: yarn
+    - name: Run Tests
       env:
         INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
         CHAIN_ID: ${{ secrets.CHAIN_ID }}
         WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
         BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
-      run: echo "Secrets loaded!"
-    - name: Install Dependencies
-      run: yarn
-    - name: Run Tests
       run: yarn test
