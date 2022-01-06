@@ -28,13 +28,14 @@ const fetchSortedOrders = async (
   // ** For each Token Address ** //
 	tokenAddresses.map(tokenAddress => {
     // ** Get all ERC721LimitOrder events for that Token Address ** //
-		const eventsForTokenAddress = filterEvents(tokenAddress, allEvents)
+		const eventsForTokenAddress = filterEvents(tokenAddress, allEvents);
 
     // ** Get the latest orders given those events ** //
-    const latestOrders = fetchLatestOrders(eventsForTokenAddress);
+    const latestOrders = fetchLatestOrders(eventsForTokenAddress, tokenAddress);
 
-		// ** Sort the orders by price offered ** //
+    // ** Sort the orders by price offered ** //
 		const sortedOrders = latestOrders.sort((a,b) => a.priceInWeiEach.gt(b.priceInWeiEach))
+		orders.set(tokenAddress, sortedOrders)
 	})
 
   // ** Return the orders mapping ** //

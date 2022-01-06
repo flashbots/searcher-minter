@@ -1,24 +1,15 @@
 import { providers } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';
 
-const fetchAllERC721LimitOrderEvents = async function (
+const callOrders = async function (
   ERC721LimitOrderContract: any,
-  filterStartBlock: number,
-  provider: providers.InfuraProvider,
-  ERC721LimitOrderInterface: any
+  // parameters for the contract viewOrder() function //
+  tokenAddress: any,
+  user: any,
 ) {
-  // get all events from the ERC721LimitOrder contract
-  console.log('Fetching all erc721 events...');
-  const filter = ERC721LimitOrderContract.filters.Action();
-  filter.fromBlock = filterStartBlock;
-  const logs = await provider.getLogs(filter);
-  console.log('Got logs:', logs);
-  const events = logs.map((log) => {
-    let parsedLog = ERC721LimitOrderInterface.parseLog(log);
-    parsedLog.txHash = log.transactionHash;
-    return parsedLog;
-  });
-  return events;
+  console.log("Calling callOrder with tokenAddress:", tokenAddress, "and user:", user);
+  let order = await ERC721LimitOrderContract.viewOrder(user, tokenAddress);
+  return order;
 };
 
-export default fetchAllERC721LimitOrderEvents;
+export default callOrders;

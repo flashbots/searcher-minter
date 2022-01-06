@@ -21,6 +21,7 @@
   "license": "Unlicense",
   "dependencies": {
     "@flashbots/ethers-provider-bundle": "0.4.1",
+    "bignumber.js": "^9.0.2",
     "dotenv": "^10.0.0",
     "ethers": "5.4.5"
   },
