@@ -30,7 +30,6 @@
       }
     ],
     "outputs": [],
-    "constant": false,
     "stateMutability": "nonpayable"
   },
   {
@@ -50,7 +49,6 @@
         "type": "uint256"
       }
     ],
-    "constant": true,
     "stateMutability": "view"
   },
   {
@@ -64,7 +62,6 @@
       }
     ],
     "outputs": [],
-    "constant": false,
     "stateMutability": "nonpayable"
   },
   {
@@ -126,7 +123,6 @@
       }
     ],
     "outputs": [],
-    "constant": false,
     "stateMutability": "nonpayable"
   },
   {
@@ -182,7 +178,6 @@
       }
     ],
     "outputs": [],
-    "constant": false,
     "stateMutability": "nonpayable"
   },
   {
@@ -201,7 +196,6 @@
       }
     ],
     "outputs": [],
-    "constant": false,
     "stateMutability": "nonpayable"
   },
   {
@@ -225,7 +219,6 @@
       }
     ],
     "outputs": [],
-    "constant": false,
     "stateMutability": "nonpayable"
   },
   {
@@ -254,7 +247,6 @@
       }
     ],
     "outputs": [],
-    "constant": false,
     "stateMutability": "nonpayable"
   },
   {
@@ -273,7 +265,6 @@
       }
     ],
     "outputs": [],
-    "constant": false,
     "stateMutability": "nonpayable"
   },
   {
@@ -325,7 +316,6 @@
         "type": "string"
       }
     ],
-    "constant": true,
     "stateMutability": "pure"
   },
   {
@@ -349,7 +339,6 @@
       }
     ],
     "outputs": [],
-    "constant": false,
     "stateMutability": "nonpayable"
   },
   {

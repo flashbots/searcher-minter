@@ -1,6 +1,12 @@
 /* eslint-disable no-console */
-import { ethers } from 'ethers';
-import { craftBundle, createFlashbotsProvider, simulateBundle } from '../src/flashbots';
+import { BigNumber, ethers } from 'ethers';
+import {
+  craftBundle,
+  craftTransaction,
+  createFlashbotsProvider,
+  simulateBundle,
+  validateSimulation,
+} from '../src/flashbots';
 
 import {
   configure,
@@ -44,17 +50,47 @@ async function main() {
   //   // bigInt,
   //   // bn
   // } = generateRandomUint256();
-  const randomTokenId = ethers.utils.randomBytes(32);
-  console.log(`32 bytes of random data: ${randomTokenId}`);
 
   // ** Encode Transaction Data ** //
   const data = yobotInfiniteMintInterface.encodeFunctionData(
     'mint',
     [
-      '0x0000000000000000000000000000000000000000', // address to
-      randomTokenId, // uint256 tokenId
+      '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
+      ethers.utils.randomBytes(32), // uint256 tokenId
     ],
   );
+  const data2 = yobotInfiniteMintInterface.encodeFunctionData(
+    'mint',
+    [
+      '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
+      ethers.utils.randomBytes(32), // uint256 tokenId
+    ],
+  );
+
+  // ** Craft two mint transactions ** //
+  const eip1559tx = await craftTransaction(
+    provider,
+    wallet,
+    chainId,
+    blocksUntilInclusion,
+    legacyGasPrice,
+    priorityFee,
+    BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
+    INFINITE_MINT,
+    data,
+  );
+  const eip1559tx2 = await craftTransaction(
+    provider,
+    wallet,
+    chainId,
+    blocksUntilInclusion,
+    legacyGasPrice,
+    priorityFee,
+    BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
+    INFINITE_MINT,
+    data2,
+  );
+  console.log('Created eip1559 transaction:', eip1559tx);
 
   // ** Create a Signed Bundle ** //
   console.log('Creating a signed bundle...');
@@ -67,13 +103,11 @@ async function main() {
   } = await craftBundle(
     provider,
     fbp,
-    wallet,
-    chainId,
     blocksUntilInclusion,
-    legacyGasPrice,
-    priorityFee,
-    INFINITE_MINT,
-    data,
+    [
+      eip1559tx,
+      eip1559tx2,
+    ],
   );
 
   // ** Simulate the Bundle ** //
@@ -86,6 +120,9 @@ async function main() {
   );
 
   console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
+
+  const didSimulationError = validateSimulation(simulation);
+  console.log(`Did the simulation error: ${didSimulationError}`);
 
   // ** Send the Bundle ** //
   console.log('Sending the bundle...');
