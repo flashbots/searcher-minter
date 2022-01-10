@@ -1,7 +1,8 @@
+/* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/naming-convention */
 import { InfuraProvider } from '@ethersproject/providers';
 import { FlashbotsBundleProvider } from '@flashbots/ethers-provider-bundle';
-import { BigNumber, Wallet } from 'ethers';
+import { BigNumber, ethers, Wallet } from 'ethers';
 import { Interface } from 'ethers/lib/utils';
 
 import {
@@ -9,6 +10,9 @@ import {
   craftBundle,
   createFlashbotsProvider,
   simulateBundle,
+  craftTransaction,
+  validateSubmitResponse,
+  validateSimulation,
 } from '../src/flashbots';
 import { configure } from '../src/utils';
 
@@ -17,13 +21,15 @@ let flashbots_endpoint: string;
 let wallet: Wallet;
 let flashbotsProvider: FlashbotsBundleProvider;
 let chain_id: number;
-let ether: BigNumber;
-let gwei: BigNumber;
+// let ether: BigNumber;
+// let gwei: BigNumber;
 let blocksUntilInclusion: number;
 let legacyGasPrice: BigNumber;
 let priorityFee: BigNumber;
-let yobotERC721LimitOrderContractAddress: string;
-let yobotERC721LimitOrderInterface: Interface;
+// let yobotERC721LimitOrderContractAddress: string;
+// let yobotERC721LimitOrderInterface: Interface;
+let yobotInfiniteMintInterface: Interface;
+let infiniteMint: string;
 
 beforeAll(() => {
   // ** Configure ** //
@@ -33,13 +39,15 @@ beforeAll(() => {
   flashbots_endpoint = config.flashbotsEndpoint;
   wallet = config.wallet;
   chain_id = config.CHAIN_ID;
-  ether = config.ETHER;
-  gwei = config.GWEI;
+  // ether = config.ETHER;
+  // gwei = config.GWEI;
   blocksUntilInclusion = config.BLOCKS_TILL_INCLUSION;
   legacyGasPrice = config.LEGACY_GAS_PRICE;
   priorityFee = config.PRIORITY_FEE;
-  yobotERC721LimitOrderContractAddress = config.YobotERC721LimitOrderContractAddress;
-  yobotERC721LimitOrderInterface = config.YobotERC721LimitOrderInterface;
+  // yobotERC721LimitOrderContractAddress = config.YobotERC721LimitOrderContractAddress;
+  // yobotERC721LimitOrderInterface = config.YobotERC721LimitOrderInterface;
+  yobotInfiniteMintInterface = config.YobotInfiniteMintInterface;
+  infiniteMint = config.INFINITE_MINT;
 
   console.log('Configured tests');
 
@@ -55,19 +63,31 @@ beforeAll(() => {
 });
 
 describe('flashbots bundles', () => {
-  it('simulates a flashbots bundle', () =>
+  it('simulates a flashbots bundle', () => {
+    const data = yobotInfiniteMintInterface.encodeFunctionData(
+      'mint',
+      [
+        '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
+        ethers.utils.randomBytes(32), // uint256 tokenId
+      ],
+    );
+
     // ** Have to asynchronously fetch the current block number from the provider ** //
-    // eslint-disable-next-line implicit-arrow-linebreak
-    craftBundle(
+    return craftTransaction(
       provider,
-      flashbotsProvider,
       wallet,
       chain_id,
       blocksUntilInclusion,
       legacyGasPrice,
       priorityFee,
-      wallet.address, // mock to address using the wallet address
-      '0x', // no data
+      BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
+      infiniteMint,
+      data,
+    ).then((tx) => craftBundle(
+      provider,
+      flashbotsProvider,
+      blocksUntilInclusion,
+      [tx],
     ).then(({
       targetBlockNumber,
       transactionBundle,
@@ -83,31 +103,37 @@ describe('flashbots bundles', () => {
         transactionBundle,
       ).then((simulation) => {
         console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
-        expect(1).toBe(1);
+        // expect the simulation not to have errors
+        expect(validateSimulation(simulation)).toBe(false);
       });
     }));
+  });
 
-  // put x infront to prevent running during github actions //
   xtest('sends a flashbots bundle', () => {
-    // ** Have to asynchronously fetch the current block number from the provider ** //
-
-    // ** Craft data for transaction ** //
-    const data = yobotERC721LimitOrderInterface.encodeFunctionData(
-      'fillOrder',
-      [],
+    const data = yobotInfiniteMintInterface.encodeFunctionData(
+      'mint',
+      [
+        '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
+        ethers.utils.randomBytes(32), // uint256 tokenId
+      ],
     );
 
-    // eslint-disable-next-line implicit-arrow-linebreak
-    craftBundle(
+    // ** Have to asynchronously fetch the current block number from the provider ** //
+    return craftTransaction(
       provider,
-      flashbotsProvider,
       wallet,
       chain_id,
       blocksUntilInclusion,
       legacyGasPrice,
       priorityFee,
-      yobotERC721LimitOrderContractAddress,
+      BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
+      infiniteMint,
       data,
+    ).then((tx) => craftBundle(
+      provider,
+      flashbotsProvider,
+      blocksUntilInclusion,
+      [tx],
     ).then(({
       targetBlockNumber,
       transactionBundle,
@@ -118,17 +144,14 @@ describe('flashbots bundles', () => {
       console.log('Sending Bundle: ', transactionBundle);
       console.log('Targeting block:', targetBlockNumber);
       return sendFlashbotsBundle(
-        provider,
-        flashbots_endpoint,
-        chain_id,
-        ether,
-        gwei,
-        wallet,
-        yobotERC721LimitOrderContractAddress, // 'to' address
-        data, // 'data'
-      ).then((simulation) => {
-        console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
-        expect(1).toBe(1);
+        flashbotsProvider,
+        targetBlockNumber,
+        [tx],
+      ).then((response) => {
+        console.log('Sent Flashbots bundle:', JSON.stringify(response, null, 2));
+        // expect the bundle not to have errors
+        expect(validateSubmitResponse(response)).toBe(false);
       });
     }));
+  });
 });

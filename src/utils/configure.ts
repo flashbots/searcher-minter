@@ -18,6 +18,8 @@ const configure = () => {
     process.exit(1);
   }
 
+  const INFINITE_MINT = '0xc47eff74c2e949fee8a249586e083f573a7e56fa';
+
   const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
 
   const flashbotsEndpoint = 'https://relay-goerli.flashbots.net';
@@ -86,6 +88,7 @@ const configure = () => {
     YobotERC721LimitOrderContractAddress,
     YobotERC721LimitOrderInterface,
     YobotInfiniteMintInterface,
+    INFINITE_MINT,
   };
 };
 

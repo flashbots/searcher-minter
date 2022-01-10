@@ -1,12 +1,11 @@
 /* eslint-disable no-console */
+import { FlashbotsTransactionResponse } from '@flashbots/ethers-provider-bundle';
 import { BigNumber, ethers } from 'ethers';
 import {
   craftBundle,
   craftTransaction,
   createFlashbotsProvider,
   sendFlashbotsBundle,
-  // sendFlashbotsBundle,
-  sendRawFlashbotsBundle,
   simulateBundle,
   validateSimulation,
   validateSubmitResponse,
@@ -20,8 +19,6 @@ import {
 require('dotenv').config();
 
 console.log('Yobot Searcher starting...');
-
-const INFINITE_MINT = '0xc47eff74c2e949fee8a249586e083f573a7e56fa';
 
 // ** Main Function ** //
 async function main() {
@@ -37,6 +34,7 @@ async function main() {
     LEGACY_GAS_PRICE: legacyGasPrice,
     PRIORITY_FEE: priorityFee,
     YobotInfiniteMintInterface: yobotInfiniteMintInterface,
+    INFINITE_MINT: infiniteMint,
     // YobotERC721LimitOrderContractAddress: yobotERC721LimitOrderContractAddress,
     // YobotERC721LimitOrderInterface: yobotERC721LimitOrderInterface,
   } = configure();
@@ -80,7 +78,7 @@ async function main() {
     legacyGasPrice,
     priorityFee,
     BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
-    INFINITE_MINT,
+    infiniteMint,
     data,
   );
   const eip1559tx2 = await craftTransaction(
@@ -91,7 +89,7 @@ async function main() {
     legacyGasPrice,
     priorityFee,
     BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
-    INFINITE_MINT,
+    infiniteMint,
     data2,
   );
   console.log('Created eip1559 transaction:', eip1559tx);
@@ -145,21 +143,27 @@ async function main() {
     const didBundleError = validateSubmitResponse(bundleRes);
     console.error(`Did bundle submission error: ${didBundleError}`);
 
-    // ** Get Bundle Stats ** //
-    // @ts-ignore
-    const bundleStats = await fbp.getBundleStats(simulation.bundleHash, targetBlockNumber);
-    console.log('Bundle stats:', JSON.stringify(bundleStats));
+    // ** Wait the response ** //
+    const simulatedBundleRes = await (bundleRes as FlashbotsTransactionResponse).simulate();
+    console.log('Simulated bundle response:', JSON.stringify(simulatedBundleRes));
+    const awaiting = await (bundleRes as FlashbotsTransactionResponse).wait();
+    console.log('Awaited response:', JSON.stringify(awaiting));
 
     // ** User Stats isn't implemented on goerli ** //
     if (chainId !== 5) {
+      // ** Get Bundle Stats ** //
+      // @ts-ignore
+      // const bundleStats = await fbp.getBundleStats(simulation.bundleHash, targetBlockNumber);
+      // console.log('Bundle stats:', JSON.stringify(bundleStats));
+
       const userStats = await fbp.getUserStats();
       console.log('User stats:', JSON.stringify(userStats));
     }
 
     // ** Wait for the tx to be mined ** //
-    // @ts-ignore
-    const waitResponse = await bundleRes.wait();
-    console.log('Awaited response:', JSON.stringify(waitResponse));
+    // // @ts-ignore
+    // const waitResponse = await bundleRes.wait();
+    // console.log('Awaited response:', JSON.stringify(waitResponse));
   } else {
     console.error(`Simulation errored: ${didSimulationError}`);
   }
