@@ -4,12 +4,16 @@ import {
   craftBundle,
   craftTransaction,
   createFlashbotsProvider,
+  sendFlashbotsBundle,
+  // sendFlashbotsBundle,
+  sendRawFlashbotsBundle,
   simulateBundle,
   validateSimulation,
+  validateSubmitResponse,
 } from '../src/flashbots';
 
 import {
-  configure,
+  configure, saveJson,
   // sendFlashbotsBundle,
 } from '../src/utils';
 
@@ -122,10 +126,43 @@ async function main() {
   console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
 
   const didSimulationError = validateSimulation(simulation);
-  console.log(`Did the simulation error: ${didSimulationError}`);
 
-  // ** Send the Bundle ** //
-  console.log('Sending the bundle...');
+  // ** Send the Bundle if not ** //
+  if (!didSimulationError) {
+    console.log('Sending the bundle...');
+    const bundleRes = await sendFlashbotsBundle(
+      fbp,
+      targetBlockNumber,
+      [
+        eip1559tx,
+        eip1559tx2,
+      ],
+    );
+
+    saveJson(bundleRes, './output/mint_output.json');
+
+    console.log('Bundle response:', JSON.stringify(bundleRes));
+    const didBundleError = validateSubmitResponse(bundleRes);
+    console.error(`Did bundle submission error: ${didBundleError}`);
+
+    // ** Get Bundle Stats ** //
+    // @ts-ignore
+    const bundleStats = await fbp.getBundleStats(simulation.bundleHash, targetBlockNumber);
+    console.log('Bundle stats:', JSON.stringify(bundleStats));
+
+    // ** User Stats isn't implemented on goerli ** //
+    if (chainId !== 5) {
+      const userStats = await fbp.getUserStats();
+      console.log('User stats:', JSON.stringify(userStats));
+    }
+
+    // ** Wait for the tx to be mined ** //
+    // @ts-ignore
+    const waitResponse = await bundleRes.wait();
+    console.log('Awaited response:', JSON.stringify(waitResponse));
+  } else {
+    console.error(`Simulation errored: ${didSimulationError}`);
+  }
 }
 
 main();

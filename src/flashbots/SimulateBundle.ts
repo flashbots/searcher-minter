@@ -5,8 +5,6 @@ const simulateBundle = async (
   targetBlockNumber: number,
   signedTransactions: string[], // (FlashbotsBundleTransaction | FlashbotsBundleRawTransaction)[]
 ) => {
-  // ** Sign the bundle ** //
-  // const signedTransactions = await flashbotsProvider.signBundle(transactionBundle)
   // ** Simulate ** //
   const simulation = await flashbotsProvider.simulate(signedTransactions, targetBlockNumber);
   return simulation;

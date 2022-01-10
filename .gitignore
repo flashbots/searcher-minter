@@ -12,6 +12,8 @@ lib-cov
 *.gz
 *.swp
 
+output/*
+
 pids
 logs
 results

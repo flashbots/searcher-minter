@@ -2,6 +2,7 @@
 export { default as configure } from './configure';
 export { default as getDeployedContract } from './DeployedContracts';
 export { default as generateRandomUint256 } from './RandomUint256';
+export { default as saveJson } from './SaveJson';
 
 // CONTRACT INTERACTION
 export { default as callOrders } from './CallOrders';
