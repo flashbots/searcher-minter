@@ -1,11 +1,12 @@
 {
   "name": "yobot-searcher",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Yobot Searcher is a Typescript server that posts flashbot bundles for executing [Yobot](https://yobot.co) bids.",
   "authors": [
     "Andreas Bigger <andreas@nascent.xyz>"
   ],
   "main": "index.ts",
+  "exports": "./src",
   "scripts": {
     "lint": "eslint src/**.ts",
     "lint:fix": "eslint src/**.ts --fix && yarn format",
@@ -16,18 +17,21 @@
     "push-release": "git push --follow-tags origin main",
     "prepare": "husky install",
     "test": "jest",
-    "start": "npx ts-node src/index.ts"
+    "start": "npx ts-node src/index.ts",
+    "scripts:mint": "npx ts-node scripts/mint.ts"
   },
   "license": "Unlicense",
   "dependencies": {
     "@ethersproject/providers": "^5.5.1",
     "@flashbots/ethers-provider-bundle": "0.4.1",
     "bignumber.js": "^9.0.2",
+    "bn.js": "^5.2.0",
     "bnc-sdk": "^3.7.0",
     "dotenv": "^10.0.0",
     "ethers": "5.4.5"
   },
   "devDependencies": {
+    "@types/bn.js": "^5.1.0",
     "@types/jest": "^27.4.0",
     "@types/node": "^16.7.2",
     "@typescript-eslint/eslint-plugin": "^5.9.0",

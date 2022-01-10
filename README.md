@@ -51,7 +51,7 @@ WALLET_PRIVATE_KEY=0x1d9af4................ yarn start
 - [ ] Check how many mints remaining
 - [ ] Compute total profit
 - [ ] Create a flashbots bundle with the list of transactions
-- [ ] Simulate the bundle
+- [x] Simulate the bundle
 - [ ] Send the bundle to flashbots
 
 ### Tasks for Artblocks-specific Mints

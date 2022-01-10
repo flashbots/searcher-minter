@@ -1,14 +1,16 @@
-import { Wallet } from 'ethers';
-import { Web3Provider } from '@ethersproject/providers';
+import { BigNumber, Wallet } from 'ethers';
+import { InfuraProvider } from '@ethersproject/providers';
 import { FlashbotsBundleProvider } from '@flashbots/ethers-provider-bundle';
 
 const sendFlashbotsBundle = async (
-  provider: Web3Provider,
+  provider: InfuraProvider,
   FLASHBOTS_ENDPOINT: string,
   CHAIN_ID: number,
-  ETHER: bigint,
-  GWEI: bigint,
+  ETHER: BigNumber,
+  GWEI: BigNumber,
   wallet: Wallet,
+  to: string,
+  data: string,
 ) => {
   const flashbotsProvider = await FlashbotsBundleProvider.create(
     provider,
@@ -25,11 +27,11 @@ const sendFlashbotsBundle = async (
           transaction: {
             chainId: CHAIN_ID,
             type: 2,
-            value: (ETHER / 100n) * 3n,
-            data: '0x1249c58b',
-            maxFeePerGas: GWEI * 3n,
-            maxPriorityFeePerGas: GWEI * 2n,
-            to: '0x20EE855E43A7af19E407E39E5110c2C1Ee41F64D',
+            value: (ETHER.toBigInt() / 100n) * 3n,
+            data, // data: '0x1249c58b',
+            maxFeePerGas: GWEI.toBigInt() * 3n,
+            maxPriorityFeePerGas: GWEI.toBigInt() * 2n,
+            to, // '0x20EE855E43A7af19E407E39E5110c2C1Ee41F64D',
           },
           signer: wallet,
         },

@@ -35,9 +35,11 @@ const configure = () => {
 
   // ** Import the Abis **
   const YobotERC721LimitOrderAbi = require('../abi/YobotERC721LimitOrder.json');
+  const YobotInfiniteMintAbi = require('../abi/InfiniteMint.json');
   // const YobotArtBlocksBrokerAbi = require('../abi/YobotArtBlocksBroker.json');
 
   // ** Instantiate Interfaces **
+  const YobotInfiniteMintInterface = new ethers.utils.Interface(YobotInfiniteMintAbi);
   const YobotERC721LimitOrderInterface = new ethers.utils.Interface(YobotERC721LimitOrderAbi);
   const YobotERC721LimitOrderContractAddress = getDeployedContract(CHAIN_ID).YobotERC721LimitOrder;
   console.log('Using YobotERC721LimitOrder defined at:', YobotERC721LimitOrderContractAddress);
@@ -60,10 +62,8 @@ const configure = () => {
   const YobotERC721LimitOrderContract = new ethers.Contract(YobotERC721LimitOrderContractAddress, YobotERC721LimitOrderAbi, provider);
   // const YobotArtBlocksBrokerContract = new ethers.Contract(getDeployedContract(CHAIN_ID).YobotArtBlocksBroker, YobotArtBlocksBrokerAbi, provider);
 
-  // ** ethers.js can use Bignumber.js class OR the JavaScript-native bigint **
-  // ** I changed this to bigint as it is MUCH easier to deal with **
-  // const ETHER: bigint = 10n ** 18n;
-
+  // ** Define Lindy Constants ** //
+  const ETHER = BigNumber.from(10).pow(18);
   const GWEI = BigNumber.from(10).pow(9);
   const PRIORITY_FEE = GWEI.mul(3);
   const LEGACY_GAS_PRICE = GWEI.mul(12);
@@ -76,13 +76,16 @@ const configure = () => {
     provider,
     wallet,
     CHAIN_ID,
+    ETHER,
     GWEI,
     PRIORITY_FEE,
     LEGACY_GAS_PRICE,
     BLOCKS_TILL_INCLUSION,
     flashbotsEndpoint,
     YobotERC721LimitOrderContract,
+    YobotERC721LimitOrderContractAddress,
     YobotERC721LimitOrderInterface,
+    YobotInfiniteMintInterface,
   };
 };
 

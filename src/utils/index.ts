@@ -1,9 +1,7 @@
 /* eslint-disable import/no-cycle */
 export { default as configure } from './configure';
 export { default as getDeployedContract } from './DeployedContracts';
-
-// FLASHBOTS
-export { default as sendFlashbotsBundle } from '../flashbots/SendBundle';
+export { default as generateRandomUint256 } from './RandomUint256';
 
 // CONTRACT INTERACTION
 export { default as callOrders } from './CallOrders';
