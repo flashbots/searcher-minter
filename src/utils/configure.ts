@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable max-len */
 /* eslint-disable global-require */
 import { Wallet, providers, BigNumber } from 'ethers';
@@ -8,46 +9,48 @@ import { getDeployedContract } from '.';
 require('dotenv').config();
 
 const configure = () => {
+  // ** Environment Variable Check ** //
+  if (
+    process.env.INFURA_PROJECT_ID === undefined
+    || process.env.ERC721_CONTRACT_ADDRESS === undefined
+    || process.env.WALLET_PRIVATE_KEY === undefined
+  ) {
+    console.error('Bad environment variable configuration');
+    console.error('Use the ".env.example" file to configure your environment variables and enter them in a ".env" file');
+    process.exit(1);
+  }
+
+  // ** Contract we want to mint from ** //
+  const MINTING_CONTRACT = process.env.ERC721_CONTRACT_ADDRESS ? process.env.ERC721_CONTRACT_ADDRESS : '';
+
   // ** Default to Goerli if no chain id provided **
   const CHAIN_ID = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID, 10) : 5;
   console.log('Using CHAIN ID:', CHAIN_ID);
 
-  // ** We need the INFURA_PROJECT_ID **
-  if (process.env.INFURA_PROJECT_ID === undefined) {
-    console.error('Please provide INFURA_PROJECT_ID env');
-    process.exit(1);
-  }
-
-  const INFINITE_MINT = '0xc47eff74c2e949fee8a249586e083f573a7e56fa';
-
+  // ** Set up an Infura Provider ** //
   const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
 
-  const flashbotsEndpoint = 'https://relay-goerli.flashbots.net';
+  // ** Configure Flashbots Relay Endpoint ** //
+  const flashbotsEndpoint = CHAIN_ID === 1 ? 'https://relay.flashbots.net' : 'https://relay-goerli.flashbots.net';
 
-  // ** We need the WALLET PRIVATE KEY **
-  if (process.env.WALLET_PRIVATE_KEY === undefined) {
-    console.error('Please provide WALLET_PRIVATE_KEY env');
-    process.exit(1);
-  }
+  // ** Setup the wallet ** //
+  const defaultProvider = providers.getDefaultProvider(CHAIN_ID); // 'goerli');
+  const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, defaultProvider);
 
-  console.log('Found a wallet!');
-
-  const defaultGoerliProvider = providers.getDefaultProvider('goerli');
-  const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, defaultGoerliProvider);
-
-  // ** Import the Abis **
+  // ** Import the Yobot Abis ** //
   const YobotERC721LimitOrderAbi = require('../abi/YobotERC721LimitOrder.json');
   const YobotInfiniteMintAbi = require('../abi/InfiniteMint.json');
   // const YobotArtBlocksBrokerAbi = require('../abi/YobotArtBlocksBroker.json');
 
-  // ** Instantiate Interfaces **
+  // ** Instantiate Interfaces ** //
   const YobotInfiniteMintInterface = new ethers.utils.Interface(YobotInfiniteMintAbi);
   const YobotERC721LimitOrderInterface = new ethers.utils.Interface(YobotERC721LimitOrderAbi);
+  // const YobotArtBlocksBrokerInterface = new ethers.utils.Interface(YobotArtBlocksBrokerAbi);
   const YobotERC721LimitOrderContractAddress = getDeployedContract(CHAIN_ID).YobotERC721LimitOrder;
   console.log('Using YobotERC721LimitOrder defined at:', YobotERC721LimitOrderContractAddress);
   console.log(`https://goerli.etherscan.io/address/${YobotERC721LimitOrderContractAddress}`);
 
-  // ** Sanity Check We Can Fetch the Contract Code **
+  // ** Sanity Check We Can Fetch the Contract Code ** //
   (async () => {
     const erc721Code = await provider.getCode(YobotERC721LimitOrderContractAddress);
     if (erc721Code === '0x') {
@@ -58,9 +61,7 @@ const configure = () => {
     }
   })();
 
-  // const YobotArtBlocksBrokerInterface = new ethers.utils.Interface(YobotArtBlocksBrokerAbi);
-
-  // ** Instantiate Contracts **
+  // ** Instantiate Contracts ** //
   const YobotERC721LimitOrderContract = new ethers.Contract(YobotERC721LimitOrderContractAddress, YobotERC721LimitOrderAbi, provider);
   // const YobotArtBlocksBrokerContract = new ethers.Contract(getDeployedContract(CHAIN_ID).YobotArtBlocksBroker, YobotArtBlocksBrokerAbi, provider);
 
@@ -70,9 +71,6 @@ const configure = () => {
   const PRIORITY_FEE = GWEI.mul(3);
   const LEGACY_GAS_PRICE = GWEI.mul(12);
   const BLOCKS_TILL_INCLUSION = 2;
-
-  // ** Create a new ethers provider **
-  // const provider = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545');
 
   return {
     provider,
@@ -88,7 +86,7 @@ const configure = () => {
     YobotERC721LimitOrderContractAddress,
     YobotERC721LimitOrderInterface,
     YobotInfiniteMintInterface,
-    INFINITE_MINT,
+    MINTING_CONTRACT,
   };
 };
 

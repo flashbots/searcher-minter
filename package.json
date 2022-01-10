@@ -19,7 +19,8 @@
     "test": "jest",
     "start": "npx ts-node src/index.ts",
     "scripts:mint": "npx ts-node scripts/mint.ts",
-    "scripts:orders": "npx ts-node scripts/orders.ts"
+    "scripts:orders": "npx ts-node scripts/orders.ts",
+    "scripts:run": "npx ts-node scripts/run.ts"
   },
   "license": "Unlicense",
   "dependencies": {
@@ -29,12 +30,14 @@
     "bn.js": "^5.2.0",
     "bnc-sdk": "^3.7.0",
     "dotenv": "^10.0.0",
-    "ethers": "5.4.5"
+    "ethers": "5.4.5",
+    "ws": "^8.4.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/jest": "^27.4.0",
     "@types/node": "^16.7.2",
+    "@types/ws": "^8.2.2",
     "@typescript-eslint/eslint-plugin": "^5.9.0",
     "@typescript-eslint/parser": "^5.9.0",
     "commitlint": "^16.0.1",

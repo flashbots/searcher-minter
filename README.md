@@ -3,23 +3,87 @@
 
 <p align="center">Yobot Searcher is a Typescript server that posts flashbot bundles for executing <a href="https://yobot.com">Yobot</a> bids.</p>
 
-## Credits
+### Architecture
+```ml
+scripts
+├─ mint — "Script to Mint Two InfiniteMint ERC721 Tokens using Flashbots Bundles"
+├─ orders — "Script to Fetch Yobot Contract Open Orders"
+├─ mint — "Main Script that runs the Yobot Searcher"
+src
+├─ abi/* — "Contract ABIs"
+├─ flashbots
+│  ├─ CraftBundle — "Creates a Flashbots Bundle"
+│  ├─ CraftTransaction — "Creates a Flashbots Transaction"
+│  └─ ValidateSubmitResponse — "Validates that the Submitted Flashbots Bundle didn't error"
+├─ mempool
+│  ├─ ...
+├─ utils
+│  ├─ ...
+tests
+├─ events.test.ts — "Test Reading Events from Yobot Contracts"
+├─ flashbots.test.ts — "Test Simulating and Sending Flashbots Bundles"
+├─ mempool.test.ts — "Test Listening and Responding to Transactions in the Mempool"
+└─ orders.test.ts — "Test Fetching Outstanding Orders/Bids on Yobot Contracts"
+```
 
-- [Forked searcher-minter repo](https://github.com/flashbots/searcher-minter) built by the amazing team at [Flashbots](https://flashbots.org).
-- [Artbotter](https://artbotter.io) for inspiring [Yobot](https://yobot.com) and providing generous amounts of their time and resources.
+### Requirements
 
-## Video Live Coding Demo
+Install Nix and Dapptools:
+```bash
+# user must be in sudoers
+curl -L https://nixos.org/nix/install | sh
 
-You can find a walkthrough of Flashbots and the creation of this NFT minting bot here:
+# Run this or login again to use Nix
+. "$HOME/.nix-profile/etc/profile.d/nix.sh"
 
-[YouTube - Using Flashbots to Mint NFTs on Ethereum - Part 1](https://www.youtube.com/watch?v=1ve1YIpDs_I)
+# Install Dapptools
+curl https://dapp.tools/install | sh
+```
 
-## How to run
+Configure Environment Variables by creating a `.env` file in the root directory of the project:
+```bash
+cp .env.example .env
+```
+
+Then, enter all the values in the `.env` file.
+
+### Usage
 
 Get some [Goerli](https://goerli.etherscan.io/) ETH on a wallet (you'll need a [faucet](https://faucet.goerli.mudit.blog/)). Extract that Goerli wallet's private key (in MetaMask `Account Details -> Export Private Key`), use that value below for `WALLET_PRIVATE_KEY` or simple create a `.env` file with the following content:
 ```
 WALLET_PRIVATE_KEY=xxxxx
 ```
+
+
+
+
+### Interactions
+
+To interact with a contract via cli using Dapptools' [seth](https://github.com/dapphub/dapptools/tree/master/src/seth), first import an account using ethsign:
+```bash
+ethsign import
+```
+
+Then, enter your wallet's private key when prompted.
+
+Send a transaction via Dapptools' [seth](https://github.com/dapphub/dapptools/tree/master/src/seth) to view the results in the mempool listener:
+```bash
+ETH_FROM=0xf25e32C0f2928F198912A4F21008aF146Af8A05a ETH_RPC_URL=<your_rpc_api_url> seth send 0xc47eff74c2e949fee8a249586e083f573a7e56fa 'mint(address,uint256)' 0xf25e32C0f2928F198912A4F21008aF146Af8A05a 0xf25e32C0f2928F198912A4F21108aF146Af8A05a
+```
+
+
+### Acknowledgements and Resources
+
+- [docs.flashbots.net](https://docs.flashbots.net)
+- [Forked searcher-minter repo](https://github.com/flashbots/searcher-minter) built by the amazing team at [Flashbots](https://flashbots.org).
+- [Artbotter](https://artbotter.io) for inspiring [Yobot](https://yobot.com) and providing generous amounts of their time and resources.
+
+#### Video Live Coding Demo
+
+You can find a walkthrough of Flashbots and the creation of this NFT minting bot here:
+
+[YouTube - Using Flashbots to Mint NFTs on Ethereum - Part 1](https://www.youtube.com/watch?v=1ve1YIpDs_I)
+
 
 
 ### Note:  It is EXTREMELY dangerous to deal with private keys in this manner, but bots require access to these keys to function. Be careful when using raw private keys that own mainnet ETH or other valuable assets. Keep as little value in these "hot" accounts as possible.
@@ -29,8 +93,12 @@ When using the `.env` file, you don't need to specify the `WALLET_PRIVATE_KEY` v
 
 ```shell
 yarn
-WALLET_PRIVATE_KEY=0x1d9af4................ yarn start
+WALLET_PRIVATE_KEY=0x................ yarn start
 ```
+
+
+
+### Development Roadmap
 
 ### Tasks for Standard ERC721 Mints
 
@@ -155,7 +223,3 @@ If you set `_sendNow` to true, then when you fill the order, the user's money wi
 
 **WasteGas**: `0x957B500673A4919C9394349E6bbD1A66Dc7E5939`
 **FakeArtMinter**: `0x20EE855E43A7af19E407E39E5110c2C1Ee41F64D`
-
-## Where can I learn more?
-
-Check out [docs.flashbots.net](https://docs.flashbots.net).

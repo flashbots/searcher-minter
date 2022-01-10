@@ -47,7 +47,7 @@ beforeAll(() => {
   // yobotERC721LimitOrderContractAddress = config.YobotERC721LimitOrderContractAddress;
   // yobotERC721LimitOrderInterface = config.YobotERC721LimitOrderInterface;
   yobotInfiniteMintInterface = config.YobotInfiniteMintInterface;
-  infiniteMint = config.INFINITE_MINT;
+  infiniteMint = config.MINTING_CONTRACT;
 
   console.log('Configured tests');
 

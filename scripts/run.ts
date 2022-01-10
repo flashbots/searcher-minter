@@ -8,7 +8,8 @@ import {
   configure,
   fetchAllERC721LimitOrderEvents,
   // sendFlashbotsBundle,
-} from 'src/utils';
+} from '../src/utils';
+import { listenNewBlocksBlocknative } from '../src/mempool';
 
 require('dotenv').config();
 
@@ -19,19 +20,52 @@ const { provider, YobotERC721LimitOrderContract, YobotERC721LimitOrderInterface 
 // ** Filter From Block Number ** //
 const filterStartBlock = 0;
 
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
+// !!                                 !! //
+// !!   BEFORE RUNNING THIS SCRIPT,   !! //
+// !!   MAKE SURE TO CONFIGURE        !! //
+// !!   ENVIRONMENT VARIABLES         !! //
+// !!                                 !! //
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
+
+// ** Callback when a transaction is received ** //
+const handleTransaction = (event: any) => {
+  const {
+    // ** transaction object ** //
+    transaction,
+    // ** data that is returned from the transaction event listener defined on the emitter ** //
+    // emitterResult,
+  } = event;
+
+  // const {
+  //   emitter
+  // } = sdk.transaction(transaction);
+
+  console.log(transaction);
+  console.log(`Transaction status: ${transaction.status}`);
+
+  if (transaction.status === 'confirmed') {
+    console.log(`Transaction ${transaction} confirmed`);
+    console.log('Sending flashbots bundle...');
+
+    // TODO: Submit a mint transaction
+  }
+};
+
 // ** Main Function ** //
 async function main() {
-  const allEvents = await fetchAllERC721LimitOrderEvents(YobotERC721LimitOrderContract, filterStartBlock, provider, YobotERC721LimitOrderInterface);
+  // ** Get Configuration ** //
+  const {
+    MINTING_CONTRACT,
+    CHAIN_ID,
+  } = configure();
 
-  console.log(allEvents);
-  // await sendFlashbotsBundle(
-  //   provider,
-  //   FLASHBOTS_ENDPOINT,
-  //   CHAIN_ID,
-  //   ETHER,
-  //   GWEI,
-  //   wallet,
-  // );
+  // ** Initialize BlockNative Mempool Listner ** //
+  await listenNewBlocksBlocknative(
+    MINTING_CONTRACT,
+    CHAIN_ID,
+    handleTransaction,
+  );
 }
 
 main();

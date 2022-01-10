@@ -34,7 +34,7 @@ async function main() {
     LEGACY_GAS_PRICE: legacyGasPrice,
     PRIORITY_FEE: priorityFee,
     YobotInfiniteMintInterface: yobotInfiniteMintInterface,
-    INFINITE_MINT: infiniteMint,
+    MINTING_CONTRACT: infiniteMint,
     // YobotERC721LimitOrderContractAddress: yobotERC721LimitOrderContractAddress,
     // YobotERC721LimitOrderInterface: yobotERC721LimitOrderInterface,
   } = configure();
