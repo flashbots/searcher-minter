@@ -83,6 +83,7 @@ describe('flashbots bundles', () => {
       BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
       infiniteMint,
       data,
+      BigNumber.from(0), // value in wei
     ).then((tx) => craftBundle(
       provider,
       flashbotsProvider,
@@ -129,6 +130,7 @@ describe('flashbots bundles', () => {
       BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
       infiniteMint,
       data,
+      BigNumber.from(0), // value in wei
     ).then((tx) => craftBundle(
       provider,
       flashbotsProvider,

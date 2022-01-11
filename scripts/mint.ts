@@ -80,6 +80,7 @@ async function main() {
     BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
     infiniteMint,
     data,
+    BigNumber.from(0), // value in wei
   );
   const eip1559tx2 = await craftTransaction(
     provider,
@@ -91,6 +92,7 @@ async function main() {
     BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
     infiniteMint,
     data2,
+    BigNumber.from(0), // value in wei
   );
   console.log('Created eip1559 transaction:', eip1559tx);
 

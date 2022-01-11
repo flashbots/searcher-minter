@@ -16,6 +16,7 @@ const craftTransaction = async (
   gasLimit: BigNumber,
   to: string,
   data: string,
+  value: BigNumber,
 ): Promise<FlashbotsBundleTransaction | FlashbotsBundleRawTransaction> => {
   const currentBlockNumber = await provider.getBlockNumber();
   console.log('Got current block number:', currentBlockNumber);
@@ -29,6 +30,7 @@ const craftTransaction = async (
     gasLimit: gasLimit.gt(0) ? gasLimit : block.gasLimit,
     data,
     nonce: await provider.getTransactionCount(wallet.address),
+    value,
   };
   console.log('Created legacy transaction:', legacyTransaction);
 
@@ -52,6 +54,7 @@ const craftTransaction = async (
       gasLimit: gasLimit.gt(0) ? gasLimit : block.gasLimit,
       data,
       chainId,
+      value,
     };
   }
   console.log('Eip1559 transaction:', eip1559Transaction);

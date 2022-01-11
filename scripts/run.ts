@@ -8,11 +8,10 @@ import {
   configure,
 } from '../src/utils';
 
+const readline = require('readline');
 const { Worker } = require('worker_threads');
 
 require('dotenv').config();
-
-console.log('Yobot Searcher starting...');
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 // !!                                 !! //
@@ -22,12 +21,51 @@ console.log('Yobot Searcher starting...');
 // !!                                 !! //
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 
+console.log('Yobot Searcher starting...');
+
+// ** Global State ** //
+const mintSignatures: string[] = [];
+
+// ** Webhook Body Helper ** //
 const params = (content: string) => {
-  return {
+  return JSON.stringify({
     username: 'YOBOT SEARCHER',
     avatar_url: '',
     content,
-  };
+  });
+};
+
+// ** Helper function to send discord notification ** //
+const postDiscord = (url: string, body: string) => {
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-type': 'application/json',
+    },
+    body,
+  }).then((res: any) => {
+    console.log('Sent Discord Notification:', body);
+  });
+};
+
+// ** CLI Helper ** //
+const enterCommand = (url: string, rl: any) => {
+  rl.question('Enter command or "help" for a list of commands:\n', (input: any) => {
+    const cmd = input.split(' ')[0];
+    const args = input.split(' ').slice(1);
+    if (cmd === 'exit') {
+      postDiscord(url, params('CLI Exited!'));
+      rl.close();
+    } else if (cmd === 'help') {
+      console.log('Available commands:');
+      console.log('   ├─ mintsig-add: Add a new mint signature to attempt to mint from');
+      console.log('   └─ help: Prints this message');
+    } else if (cmd === 'mintsig-add') {
+      args.map((arg: string) => mintSignatures.push(arg));
+    }
+    // ** Continue the loop ** //
+    enterCommand(url, rl);
+  });
 };
 
 (async () => {
@@ -56,18 +94,15 @@ const params = (content: string) => {
   let orderUpdateCount = 0;
   let transactionCount = 0;
   let verifiedOrders = [];
+  let mintingLocked = false;
 
   // ** Create the Blocknative Mempool Listner Worker ** //
   const mempoolWorker = new Worker('./src/threads/Mempool.js');
 
   mempoolWorker.on('message', (result: any) => {
     transactionCount += 1;
-
-    // !! TODO: here is where we want to mint using the open bids !! //
-    // TODO: probably want to ignore our own confirmed transactions
-
     console.log('-----------------------------------------');
-    console.log(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction`);
+    console.log(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`);
     console.log(`   ├─ Status: ${result.status}`);
     console.log(`   ├─ From: ${result.from}`);
     console.log(`   ├─ To: ${result.to}`);
@@ -77,34 +112,35 @@ const params = (content: string) => {
     console.log(`   ├─ Timestamp: ${result.timestamp}`);
     console.log(`   └─ Network: ${result.network}`);
     console.log('-----------------------------------------');
+
+    if (!mintingLocked) {
+      mintingLocked = true;
+      console.log('Minting not locked, proceeding to mint...');
+
+      // ** Check how many we minted and filter those out of verified orders starting with most expensive bid ** //
+      // ** Filter out orders that are not profitable... ie: priceInWeiEach < gas price + mint cost ** //
+
+      // ** Now, we have a list of profitable orders we want to mint for ** //
+      // ** Check how many we can mint (MAX_SUPPLY - totalSupply) ** //
+      // ** Include x number in bundle ** //
+      // ** Simulate Bundle ** //
+
+      // ** Send Bundle to Flashbots ** //
+
+      // ** Record how many we minted ** //
+    }
   });
 
   mempoolWorker.on('error', (error: any) => {
     console.error('Mempool Worker Errored!');
     console.error(error);
-    fetch(discordWebhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-type': 'application/json',
-      },
-      body: JSON.stringify(params('Mempool Worker Errored!')),
-    }).then((res: any) => {
-      console.log('Sent Discord Notification that Mempool Worker Errored');
-    });
+    postDiscord(discordWebhookUrl, params('Mempool Worker Errored!'));
   });
 
   mempoolWorker.on('exit', (exitCode: any) => {
     console.warn('Mempool Worker Exited!');
     console.warn(exitCode);
-    fetch(discordWebhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-type': 'application/json',
-      },
-      body: JSON.stringify(params('Mempool Worker Exited!')),
-    }).then((res: any) => {
-      console.log('Sent Discord Notification that Mempool Worker Exited');
-    });
+    postDiscord(discordWebhookUrl, params('Mempool Worker Exited!'));
   });
 
   // ** Create the Yobot Orders Listner Worker ** //
@@ -113,35 +149,20 @@ const params = (content: string) => {
   ordersWorker.on('message', (result: any) => {
     orderUpdateCount += 1;
     verifiedOrders = result.orders;
+    console.log('got verified orders:', verifiedOrders);
     console.log(`  [${orderUpdateCount}] Order Update - ${result.orders.length} open orders on block ${result.blockNumber}`);
   });
 
   ordersWorker.on('error', (error: any) => {
     console.error('Orders Worker Errored!');
     console.error(error);
-    fetch(discordWebhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-type': 'application/json',
-      },
-      body: JSON.stringify(params('Orders Worker Errored!')),
-    }).then((res: any) => {
-      console.log('Sent Discord Notification that Orders Worker Errored');
-    });
+    postDiscord(discordWebhookUrl, params('Orders Worker Errored!'));
   });
 
   ordersWorker.on('exit', (exitCode: any) => {
     console.warn('Orders Worker Exited!');
     console.warn(exitCode);
-    fetch(discordWebhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-type': 'application/json',
-      },
-      body: JSON.stringify(params('Orders Worker Exited!')),
-    }).then((res: any) => {
-      console.log('Sent Discord Notification that Orders Worker Exited');
-    });
+    postDiscord(discordWebhookUrl, params('Orders Worker Exited!'));
   });
 
   // ** Start Both Workers ** //
@@ -153,4 +174,14 @@ const params = (content: string) => {
   ordersWorker.postMessage({
     type: 'start',
   });
+
+  // ** Eat User Input ** //
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  rl.on('close', () => {
+    enterCommand(discordWebhookUrl, rl);
+  });
+  enterCommand(discordWebhookUrl, rl);
 })();
