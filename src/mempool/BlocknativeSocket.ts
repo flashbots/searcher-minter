@@ -25,7 +25,6 @@ const listenNewBlocksBlocknative = async (
   // YobotERC721LimitOrderContractAddress
   // const AttachedAddress = '0x3b4a7f92ee992ffb71ddd367f2702fbaa3d64f4b';
 
-  console.log('Instantiating Blocknative SDK...');
   const sdk = new Blocknative(options);
   await sdk.configuration({
     scope: address, // [required] - either 'global' or valid Ethereum address

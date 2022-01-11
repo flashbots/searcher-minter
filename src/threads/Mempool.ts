@@ -12,19 +12,13 @@ const handleTransaction = (event: any) => {
     // emitterResult,
   } = event;
 
-  // const {
-  //   emitter
-  // } = sdk.transaction(transaction);
-
-  console.log(transaction);
-  console.log(`Transaction status: ${transaction.status}`);
+  // const { emitter } = sdk.transaction(transaction);
 
   if (transaction.status === 'confirmed') {
-    console.log(`Transaction ${transaction} confirmed`);
-    console.log('Sending flashbots bundle...');
-
     // ** Send a Message Back to the parent thread ** //
     parentPort.postMessage(transaction);
+  } else {
+    console.log(`Got Transaction with status: ${transaction.status}`);
   }
 };
 

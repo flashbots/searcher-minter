@@ -12,7 +12,7 @@ parentPort.on('message', async (data: any) => {
       YobotERC721LimitOrderContract: yobotERC721LimitOrderContract,
       YobotERC721LimitOrderInterface: yobotERC721LimitOrderInterface,
     } = configure();
-    provider.on('block', async () => {
+    provider.on('block', async (blockNumber: number) => {
       // ** Fetch Sorted Orders ** //
       const events = await fetchSortedOrders(
         yobotERC721LimitOrderContract,
@@ -57,7 +57,10 @@ parentPort.on('message', async (data: any) => {
       }
 
       // ** Send Verified Orders to Parent Thread ** //
-      parentPort.postMessage(verifiedOrders);
+      parentPort.postMessage({
+        orders: verifiedOrders,
+        blockNumber,
+      });
     });
   }
 });

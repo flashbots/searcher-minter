@@ -20,12 +20,15 @@ const configure = () => {
     process.exit(1);
   }
 
+  // ** Discord Webhook ** //
+  const { DISCORD_WEBHOOK_URL } = process.env;
+
   // ** Contract we want to mint from ** //
   const MINTING_CONTRACT = process.env.ERC721_CONTRACT_ADDRESS ? process.env.ERC721_CONTRACT_ADDRESS : '';
 
   // ** Default to Goerli if no chain id provided **
   const CHAIN_ID = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID, 10) : 5;
-  console.log('Using CHAIN ID:', CHAIN_ID);
+  // console.log('Using CHAIN ID:', CHAIN_ID);
 
   // ** Set up an Infura Provider ** //
   const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
@@ -47,8 +50,8 @@ const configure = () => {
   const YobotERC721LimitOrderInterface = new ethers.utils.Interface(YobotERC721LimitOrderAbi);
   // const YobotArtBlocksBrokerInterface = new ethers.utils.Interface(YobotArtBlocksBrokerAbi);
   const YobotERC721LimitOrderContractAddress = getDeployedContract(CHAIN_ID).YobotERC721LimitOrder;
-  console.log('Using YobotERC721LimitOrder defined at:', YobotERC721LimitOrderContractAddress);
-  console.log(`https://goerli.etherscan.io/address/${YobotERC721LimitOrderContractAddress}`);
+  // console.log('Using YobotERC721LimitOrder defined at:', YobotERC721LimitOrderContractAddress);
+  // console.log(`https://goerli.etherscan.io/address/${YobotERC721LimitOrderContractAddress}`);
 
   // ** Sanity Check We Can Fetch the Contract Code ** //
   (async () => {
@@ -57,7 +60,7 @@ const configure = () => {
       console.error('Invalid contract address or provider configuration...');
       process.exit(1);
     } else {
-      console.log('Successfully Fetched YobotERC721LimitOrder Contract Code');
+      // console.log('Successfully Fetched YobotERC721LimitOrder Contract Code');
     }
   })();
 
@@ -87,6 +90,7 @@ const configure = () => {
     YobotERC721LimitOrderInterface,
     YobotInfiniteMintInterface,
     MINTING_CONTRACT,
+    DISCORD_WEBHOOK_URL,
   };
 };
 
