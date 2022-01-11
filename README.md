@@ -1,14 +1,14 @@
 # yobot-searcher • [![tests](https://github.com/nascentxyz/yobot-searcher/actions/workflows/test.yml/badge.svg)](https://github.com/nascentxyz/yobot-searcher/actions/workflows/test.yml) [![lints](https://github.com/nascentxyz/yobot-searcher/actions/workflows/lint.yml/badge.svg)](https://github.com/nascentxyz/yobot-searcher/actions/workflows/lint.yml) ![GitHub](https://img.shields.io/github/license/nascentxyz/yobot-searcher) ![GitHub package.json version](https://img.shields.io/github/package-json/v/nascentxyz/yobot-searcher)
 
 
-<p align="center">Yobot Searcher is a Typescript server that posts flashbot bundles for executing <a href="https://yobot.com">Yobot</a> bids.</p>
+Yobot Searcher is a Typescript server that posts [Flashbot](https://flashbots.net) bundles, executing [Yobot](https://yobot.com) bids.
 
 ### Architecture
 ```ml
 scripts
 ├─ mint — "Script to Mint Two InfiniteMint ERC721 Tokens using Flashbots Bundles"
 ├─ orders — "Script to Fetch Yobot Contract Open Orders"
-├─ mint — "Main Script that runs the Yobot Searcher"
+├─ run — "Main Script that runs the Yobot Searcher"
 src
 ├─ abi/* — "Contract ABIs"
 ├─ flashbots
@@ -20,7 +20,12 @@ src
 │  ├─ ValidateSimulation — "Validates a Flashbots Simulation"
 │  └─ ValidateSubmitResponse — "Validates that the Submitted Flashbots Bundle didn't error"
 ├─ mempool
-│  └─ BlocknativeSocket - "Creates a Websocket Connection to Blocknative Mempool API Service"
+│  └─ BlocknativeSocket — "Creates a Websocket Connection to Blocknative Mempool API Service"
+├─ threads
+│  ├─ Mempool.js — "Woker Scripts can't have a ts extension, this is a workaround"
+│  ├─ Mempool.ts — "Mempool thread that runs the Blocknative Mempool Websocket Connection"
+│  ├─ Orders.js — "Woker Scripts can't have a ts extension, this is a workaround"
+│  └─ Orders.ts — "Orders Thread that sends a list of orders to the parent process on every new block"
 ├─ utils
 │  ├─ CallOrders — "Helper to Fetch Yobot Contract Open Orders"
 │  ├─ DeployedContracts — "Config File for Deployed Contracts"
