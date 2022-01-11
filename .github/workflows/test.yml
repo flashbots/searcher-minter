@@ -20,4 +20,5 @@ jobs:
         CHAIN_ID: ${{ secrets.CHAIN_ID }}
         WALLET_PRIVATE_KEY: ${{ secrets.WALLET_PRIVATE_KEY }}
         BLOCKNATIVE_API_KEY: ${{ secrets.BLOCKNATIVE_API_KEY }}
+        ERC721_CONTRACT_ADDRESS: ${{ secrets.ERC721_CONTRACT_ADDRESS }}
       run: yarn test
