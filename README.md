@@ -1,7 +1,6 @@
 # yobot-searcher • [![tests](https://github.com/nascentxyz/yobot-searcher/actions/workflows/test.yml/badge.svg)](https://github.com/nascentxyz/yobot-searcher/actions/workflows/test.yml) [![lints](https://github.com/nascentxyz/yobot-searcher/actions/workflows/lint.yml/badge.svg)](https://github.com/nascentxyz/yobot-searcher/actions/workflows/lint.yml) ![GitHub](https://img.shields.io/github/license/nascentxyz/yobot-searcher) ![GitHub package.json version](https://img.shields.io/github/package-json/v/nascentxyz/yobot-searcher)
 
-
-Yobot Searcher is a Typescript server that posts [Flashbot](https://flashbots.net) bundles, executing [Yobot](https://yobot.com) bids.
+**Robust** Searcher executing [Yobot](https://yobot.com) bids with [Flashbot](https://flashbots.net) bundles.
 
 ### Architecture
 ```ml
