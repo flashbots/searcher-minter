@@ -11,6 +11,8 @@ import {
 } from '../src/utils';
 import { listenNewBlocksBlocknative } from '../src/mempool';
 
+const { Worker } = require('worker_threads');
+
 require('dotenv').config();
 
 console.log('Yobot Searcher starting...');
@@ -28,30 +30,6 @@ const filterStartBlock = 0;
 // !!                                 !! //
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 
-// ** Callback when a transaction is received ** //
-const handleTransaction = (event: any) => {
-  const {
-    // ** transaction object ** //
-    transaction,
-    // ** data that is returned from the transaction event listener defined on the emitter ** //
-    // emitterResult,
-  } = event;
-
-  // const {
-  //   emitter
-  // } = sdk.transaction(transaction);
-
-  console.log(transaction);
-  console.log(`Transaction status: ${transaction.status}`);
-
-  if (transaction.status === 'confirmed') {
-    console.log(`Transaction ${transaction} confirmed`);
-    console.log('Sending flashbots bundle...');
-
-    // TODO: Submit a mint transaction
-  }
-};
-
 // ** Main Function ** //
 async function main() {
   // ** Get Configuration ** //
@@ -60,14 +38,39 @@ async function main() {
     CHAIN_ID,
   } = configure();
 
-  // TODO: spawn another thread with a listener for the yobot erc721 contract that pulls down new limit order events
+  // ** Create the Blocknative Mempool Listner Worker ** //
+  const mempoolWorker = new Worker('../src/theads/Mempool.ts');
 
-  // ** Initialize BlockNative Mempool Listner ** //
-  await listenNewBlocksBlocknative(
-    'global', // MINTING_CONTRACT,
-    CHAIN_ID,
-    handleTransaction,
-  );
+  mempoolWorker.once('message', (result: any) => {
+    console.log('Got message from the Mempool worker thread:', result);
+  });
+
+  mempoolWorker.on('error', (error: any) => {
+    console.error('Mempool Worker Errored!');
+    console.error(error);
+  });
+
+  mempoolWorker.on('exit', (exitCode: any) => {
+    console.warn('Mempool Worker Exited!');
+    console.warn(exitCode);
+  });
+
+  // ** Create the Yobot Orders Listner Worker ** //
+  const ordersWorker = new Worker('../src/theads/Orders.ts');
+
+  ordersWorker.once('message', (result: any) => {
+    console.log('Got message from the orders worker thread:', result);
+  });
+
+  ordersWorker.on('error', (error: any) => {
+    console.error('Orders Worker Errored!');
+    console.error(error);
+  });
+
+  ordersWorker.on('exit', (exitCode: any) => {
+    console.warn('Orders Worker Exited!');
+    console.warn(exitCode);
+  });
 }
 
 main();
