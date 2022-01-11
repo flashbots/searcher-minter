@@ -14,11 +14,22 @@ src
 ├─ flashbots
 │  ├─ CraftBundle — "Creates a Flashbots Bundle"
 │  ├─ CraftTransaction — "Creates a Flashbots Transaction"
+│  ├─ FlashbotsProvider — "Instantiates a Flashbots Provider"
+│  ├─ SendBundle — "Sends a Flashbots Bundle"
+│  ├─ SimulateBundle — "Simulates a Flashbots Bundle"
+│  ├─ ValidateSimulation — "Validates a Flashbots Simulation"
 │  └─ ValidateSubmitResponse — "Validates that the Submitted Flashbots Bundle didn't error"
 ├─ mempool
-│  ├─ ...
+│  └─ BlocknativeSocket - "Creates a Websocket Connection to Blocknative Mempool API Service"
 ├─ utils
-│  ├─ ...
+│  ├─ CallOrders — "Helper to Fetch Yobot Contract Open Orders"
+│  ├─ DeployedContracts — "Config File for Deployed Contracts"
+│  ├─ FetchAllERC721LimitOrderEvents — "Get Yobot ERC721 Limit Order Contract Events"
+│  ├─ FetchLatestOrders — "Get the Latest Orders Helper Function"
+│  ├─ FetchSortedOrders — "Sort Yobot Orders"
+│  ├─ FilterEvents — "Filters Yobot Orders"
+│  ├─ RandomUint256 — "Generates a Random Uint256"
+│  └─ SaveJson — "Helper to Save JSON to a File"
 tests
 ├─ events.test.ts — "Test Reading Events from Yobot Contracts"
 ├─ flashbots.test.ts — "Test Simulating and Sending Flashbots Bundles"
@@ -45,17 +56,30 @@ Configure Environment Variables by creating a `.env` file in the root directory 
 cp .env.example .env
 ```
 
+> Note:  It is EXTREMELY dangerous to deal with private keys in this manner, but bots require access to these keys to function. Be careful when using raw private keys that own mainnet ETH or other valuable assets. Keep as little value in these "hot" accounts as possible.
+
+
 Then, enter all the values in the `.env` file.
+
+Get some [Goerli](https://goerli.etherscan.io/) ETH on a wallet (you'll need a [faucet](https://faucet.goerli.mudit.blog/)). Extract that Goerli wallet's private key (in MetaMask `Account Details -> Export Private Key`).
+Alternatively, claim testnet funds on Paradigm's [faucet](https://faucet.paradigm.xyz).
 
 ### Usage
 
-Get some [Goerli](https://goerli.etherscan.io/) ETH on a wallet (you'll need a [faucet](https://faucet.goerli.mudit.blog/)). Extract that Goerli wallet's private key (in MetaMask `Account Details -> Export Private Key`), use that value below for `WALLET_PRIVATE_KEY` or simple create a `.env` file with the following content:
+To view Open Orders on the Yobot ERC721 Limit Order Contract, run:
+```bash
+yarn scripts:orders
 ```
-WALLET_PRIVATE_KEY=xxxxx
+
+To mint two erc721 tokens on the mock InfiniteMint Contract (only deployed on Goerli), run:
+```bash
+yarn scripts:mint
 ```
 
-
-
+To run the Yobot Searcher:
+```bash
+yarn scripts:run
+```
 
 ### Interactions
 
@@ -84,23 +108,7 @@ You can find a walkthrough of Flashbots and the creation of this NFT minting bot
 
 [YouTube - Using Flashbots to Mint NFTs on Ethereum - Part 1](https://www.youtube.com/watch?v=1ve1YIpDs_I)
 
-
-
-### Note:  It is EXTREMELY dangerous to deal with private keys in this manner, but bots require access to these keys to function. Be careful when using raw private keys that own mainnet ETH or other valuable assets. Keep as little value in these "hot" accounts as possible.
-
-
-When using the `.env` file, you don't need to specify the `WALLET_PRIVATE_KEY` value before running `yarn start`.
-
-```shell
-yarn
-WALLET_PRIVATE_KEY=0x................ yarn start
-```
-
-
-
 ### Development Roadmap
-
-### Tasks for Standard ERC721 Mints
 
 - [x] Fetch All Open Bids from the Yobot Contracts.
   - [x] Fetch emitted Action events.
@@ -122,9 +130,9 @@ WALLET_PRIVATE_KEY=0x................ yarn start
 - [x] Simulate the bundle
 - [ ] Send the bundle to flashbots
 
-### Tasks for Artblocks-specific Mints
+### Artblocks-specific Roadmap
 
-
+...
 
 #### Artbotter Notes
 
@@ -185,7 +193,7 @@ An easier MVP (IMHO) would be to start with version 2 and only support NFTs that
 
 ```
 
-## General Docs
+### Yobot Contract Docs
 
 
 ### fillOrder - How to use

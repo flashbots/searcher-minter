@@ -60,9 +60,11 @@ async function main() {
     CHAIN_ID,
   } = configure();
 
+  // TODO: spawn another thread with a listener for the yobot erc721 contract that pulls down new limit order events
+
   // ** Initialize BlockNative Mempool Listner ** //
   await listenNewBlocksBlocknative(
-    MINTING_CONTRACT,
+    'global', // MINTING_CONTRACT,
     CHAIN_ID,
     handleTransaction,
   );
