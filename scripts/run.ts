@@ -1,26 +1,15 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable max-len */
 /* eslint-disable no-console */
-import { providers, Wallet } from 'ethers';
-import * as ethers from 'ethers';
-
 import {
   configure,
-  fetchAllERC721LimitOrderEvents,
-  // sendFlashbotsBundle,
 } from '../src/utils';
-import { listenNewBlocksBlocknative } from '../src/mempool';
 
 const { Worker } = require('worker_threads');
 
 require('dotenv').config();
 
 console.log('Yobot Searcher starting...');
-
-const { provider, YobotERC721LimitOrderContract, YobotERC721LimitOrderInterface } = configure();
-
-// ** Filter From Block Number ** //
-const filterStartBlock = 0;
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 // !!                                 !! //
@@ -30,8 +19,7 @@ const filterStartBlock = 0;
 // !!                                 !! //
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 
-// ** Main Function ** //
-async function main() {
+(async () => {
   // ** Get Configuration ** //
   const {
     MINTING_CONTRACT,
@@ -39,7 +27,9 @@ async function main() {
   } = configure();
 
   // ** Create the Blocknative Mempool Listner Worker ** //
-  const mempoolWorker = new Worker('../src/theads/Mempool.ts');
+  const mempoolWorker = new Worker('./src/threads/Mempool.js');
+
+  console.log('Created Mempool Worker:', mempoolWorker);
 
   mempoolWorker.once('message', (result: any) => {
     console.log('Got message from the Mempool worker thread:', result);
@@ -56,7 +46,7 @@ async function main() {
   });
 
   // ** Create the Yobot Orders Listner Worker ** //
-  const ordersWorker = new Worker('../src/theads/Orders.ts');
+  const ordersWorker = new Worker('./src/threads/Orders.js');
 
   ordersWorker.once('message', (result: any) => {
     console.log('Got message from the orders worker thread:', result);
@@ -71,6 +61,14 @@ async function main() {
     console.warn('Orders Worker Exited!');
     console.warn(exitCode);
   });
-}
 
-main();
+  // ** Start Both Workers ** //
+  mempoolWorker.postMessage({
+    type: 'start',
+    MINTING_CONTRACT,
+    CHAIN_ID,
+  });
+  ordersWorker.postMessage({
+    type: 'start',
+  });
+})();

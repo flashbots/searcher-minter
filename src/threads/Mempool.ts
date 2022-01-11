@@ -28,7 +28,7 @@ const handleTransaction = (event: any) => {
   }
 };
 
-parentPort.on('message', (data: any) => {
+parentPort.on('message', async (data: any) => {
   if (data.type === 'start') {
     // ** Start Blocknative Mempool Listner ** //
 
