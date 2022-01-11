@@ -3,6 +3,7 @@
 /* eslint-disable max-len */
 /* eslint-disable no-console */
 import fetch from 'cross-fetch';
+import { YobotBid } from '../src/types';
 import { createFlashbotsProvider } from '../src/flashbots';
 import {
   configure,
@@ -93,7 +94,7 @@ const enterCommand = (url: string, rl: any) => {
   // ** STATE ** //
   let orderUpdateCount = 0;
   let transactionCount = 0;
-  let verifiedOrders = [];
+  let verifiedOrders: YobotBid[] = [];
   let mintingLocked = false;
 
   // ** Create the Blocknative Mempool Listner Worker ** //
@@ -117,7 +118,11 @@ const enterCommand = (url: string, rl: any) => {
       mintingLocked = true;
       console.log('Minting not locked, proceeding to mint...');
 
-      // ** Check how many we minted and filter those out of verified orders starting with most expensive bid ** //
+      // ** Check how many we minted and filter those out of verified orders ** //
+      // ** starting with most expensive bid ** //
+      // ** NOTE: `sort` operates _in-place_, so we don't need reassignement ** //
+      verifiedOrders.sort((a, b) => b.priceInWeiEach.sub(a.priceInWeiEach).toNumber());
+
       // ** Filter out orders that are not profitable... ie: priceInWeiEach < gas price + mint cost ** //
 
       // ** Now, we have a list of profitable orders we want to mint for ** //
