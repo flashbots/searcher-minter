@@ -6,6 +6,8 @@ export { default as saveJson } from './SaveJson';
 
 // CONTRACT INTERACTION
 export { default as callOrders } from './CallOrders';
+export { default as extractMintPrice } from './ExtractMintPrice';
+export * from './ExtractSupply';
 
 // EVENTS
 export { default as fetchAllERC721LimitOrderEvents } from './FetchAllERC721LimitOrderEvents';

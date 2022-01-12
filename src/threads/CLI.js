@@ -1,3 +1,4 @@
+/* eslint-disable import/no-dynamic-require */
 // @ts-nocheck
 const path = require('path');
 

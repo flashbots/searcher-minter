@@ -20,6 +20,15 @@ const configure = () => {
     process.exit(1);
   }
 
+  // ** Optionally Specify the Minting ABI ** //
+  const { MINTING_ABI } = process.env;
+
+  // **  Optionally Specify the Total Supply ABI ** //
+  const { TOTAL_SUPPLY_ABI } = process.env;
+
+  // **  Optionally Specify the Max Supply ABI ** //
+  const { MAX_SUPPLY_ABI } = process.env;
+
   // ** Discord Webhook ** //
   const { DISCORD_WEBHOOK_URL } = process.env;
 
@@ -91,6 +100,9 @@ const configure = () => {
     YobotInfiniteMintInterface,
     MINTING_CONTRACT,
     DISCORD_WEBHOOK_URL,
+    MINTING_ABI,
+    TOTAL_SUPPLY_ABI,
+    MAX_SUPPLY_ABI,
   };
 };
 
