@@ -39,7 +39,6 @@ async function orders() {
       // eslint-disable-next-line no-await-in-loop
       const contractOrder = await callOrders(
         yobotERC721LimitOrderContract,
-        token,
         order.user,
       );
       const contractOrderPrice = contractOrder.priceInWeiEach.toString();

@@ -138,6 +138,14 @@ describe('flashbots bundles', () => {
       ],
     );
 
+    const data2 = yobotInfiniteMintInterface.encodeFunctionData(
+      'mint',
+      [
+        '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
+        ethers.utils.randomBytes(32), // uint256 tokenId
+      ],
+    );
+
     // ** Have to asynchronously fetch the current block number from the provider ** //
     return craftTransaction(
       provider,
@@ -149,12 +157,23 @@ describe('flashbots bundles', () => {
       BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
       infiniteMint,
       data,
-      BigNumber.from(0), // value in wei
-    ).then((tx) => craftBundle(
+      ethers.utils.parseEther('0.07'), // price of a Strict Mint ERC721 token
+    ).then((tx) => craftTransaction(
+      provider,
+      wallet,
+      chain_id,
+      blocksUntilInclusion,
+      legacyGasPrice,
+      priorityFee,
+      BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
+      infiniteMint,
+      data2,
+      ethers.utils.parseEther('0.07'), // price of a Strict Mint ERC721 token
+    ).then((tx2) => craftBundle(
       provider,
       flashbotsProvider,
       blocksUntilInclusion,
-      [tx],
+      [tx, tx2],
     ).then(({
       targetBlockNumber,
       transactionBundle,
@@ -173,6 +192,6 @@ describe('flashbots bundles', () => {
         // expect the bundle not to have errors
         expect(validateSubmitResponse(response)).toBe(false);
       });
-    }));
+    })));
   });
 });
