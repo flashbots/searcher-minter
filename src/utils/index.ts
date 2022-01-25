@@ -5,7 +5,7 @@ export { default as generateRandomUint256 } from './RandomUint256';
 export { default as saveJson } from './SaveJson';
 
 // CONTRACT INTERACTION
-export { default as callOrders } from './CallOrders';
+export * from './CallOrders';
 export { default as extractMintPrice } from './ExtractMintPrice';
 export * from './ExtractSupply';
 

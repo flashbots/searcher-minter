@@ -30,7 +30,7 @@ const DeployedContracts: DeployedContractsType = {
   // goerli
   5: {
     YobotArtBlocksBroker: '0x041761ca2d7730ae3788f732c1a43db002feff2f',
-    YobotERC721LimitOrder: '0x0d29790c2412f42248905f879260f1a6f409a11a',
+    YobotERC721LimitOrder: '0x20340E29Ba445553F6A5c1b8D30F405B3447664d',
   },
 };
 

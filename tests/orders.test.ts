@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable arrow-body-style */
 /* eslint-disable no-console */
 /* eslint-disable consistent-return */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -41,24 +43,31 @@ describe('fetches orders', () => {
       // let { token, orders } = obj;
       // ** Iterate orders ** //
       const orderQueries = orders.map(async (order: any) => {
-        console.log('have order:', order);
-        const contractOrder = await callOrders(YobotERC721LimitOrderContract, token, order.user);
-        const contractOrderPrice = contractOrder.priceInWeiEach.toString();
-        const contractOrderQuantity = contractOrder.quantity.toString();
-        const orderPrice = order.priceInWeiEach.toString();
-        const orderQuantity = order.quantity.toString();
+        // ** Fetch all user's orders and verify they exist ** //
+        return callOrders(YobotERC721LimitOrderContract, order.user).then((fetchedOrders) => {
+          // ** Loop over all the user's open orders to make sure it exists ** //
+          for (const fetchedOrder of fetchedOrders) {
+            const contractOrderPrice = fetchedOrder.priceInWeiEach.toString();
+            const contractOrderQuantity = fetchedOrder.quantity.toString();
+            const contractOrderNum = fetchedOrder.num.toString();
+            const orderPrice = order.priceInWeiEach.toString();
+            const orderQuantity = order.quantity.toString();
+            const orderNum = order.orderNum.toString();
 
-        if (orderPrice === contractOrderPrice
-            && orderQuantity === contractOrderQuantity
-        ) {
-          const verifiedOrder = {
-            token,
-            user: order.user,
-            priceInWeiEach: contractOrderPrice,
-            quantity: contractOrderQuantity,
-          };
-          return verifiedOrder;
-        }
+            if (orderPrice === contractOrderPrice
+                && orderQuantity === contractOrderQuantity
+                && orderNum === contractOrderNum
+            ) {
+              const verifiedOrder = {
+                token,
+                user: order.user,
+                priceInWeiEach: contractOrderPrice,
+                quantity: contractOrderQuantity,
+              };
+              return verifiedOrder;
+            }
+          }
+        });
       });
 
       return Promise.all(orderQueries).then((query) => query);

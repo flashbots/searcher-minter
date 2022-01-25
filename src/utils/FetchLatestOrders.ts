@@ -8,9 +8,13 @@ const fetchLatestOrders = (eventsForTokenAddress: any[], tokenAddress: string) =
   eventsInReversedOrder.forEach((event) => {
     const userOrder = {
       user: event.args._user,
+      tokenAddress,
       priceInWeiEach: event.args._priceInWeiEach,
       quantity: event.args._quantity,
-      tokenAddress,
+      action: event.args._action,
+      orderId: event.args._orderId,
+      orderNum: event.args._orderNum,
+      tokenId: event.args._tokenId,
     };
 
     // ** ORDER_CANCELLED events ** //
