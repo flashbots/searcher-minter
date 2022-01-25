@@ -2,23 +2,29 @@
 /* eslint-disable consistent-return */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { InfuraProvider, Web3Provider } from '@ethersproject/providers';
+import { ethers } from 'ethers';
 import {
   callOrders,
   configure,
+  extractMaxSupplies,
+  extractMintPrice,
+  extractTotalSupplies,
   // fetchAllERC721LimitOrderEvents,
   fetchSortedOrders,
 } from '../src/utils';
 
 require('bignumber.js');
 
+// ** General Config Variables ** //
 let provider: InfuraProvider;
 let YobotERC721LimitOrderContract: any;
 let YobotERC721LimitOrderInterface: any;
+let MINTING_CONTRACT: string;
 
 // ** Contract ABIS ** //
-let MINTING_ABI;
-let TOTAL_SUPPLY_ABI;
-let MAX_SUPPLY_ABI;
+let MINTING_ABI: string;
+let TOTAL_SUPPLY_ABI: string;
+let MAX_SUPPLY_ABI: string;
 
 beforeAll(() => {
   // ** Configure ** //
@@ -27,53 +33,120 @@ beforeAll(() => {
   provider = config.provider;
   YobotERC721LimitOrderContract = config.YobotERC721LimitOrderContract;
   YobotERC721LimitOrderInterface = config.YobotERC721LimitOrderInterface;
+  // ** Extract the potential ABIs ** //
+  MINTING_ABI = config.MINTING_ABI;
+  TOTAL_SUPPLY_ABI = config.TOTAL_SUPPLY_ABI;
+  MAX_SUPPLY_ABI = config.MAX_SUPPLY_ABI;
+  MINTING_CONTRACT = config.MINTING_CONTRACT;
 });
 
-describe('fetches orders', () => {
-  // ** Filter From Block Number **
-  const filterStartBlock = 0;
-
-  it('fetches verified orders', () => fetchSortedOrders(
-    YobotERC721LimitOrderContract,
-    filterStartBlock,
+// *********************** //
+// **  TEST MINT PRICE  ** //
+// *********************** //
+describe('mint price', () => {
+  it('extracts the mint price using a known abi', () => extractMintPrice(
+    MINTING_CONTRACT,
     provider,
-    YobotERC721LimitOrderInterface,
-  ).then((events) => {
-    // ** Iterate mapping ** //
-    const eventArray: any = [];
-    events.forEach((orders, token) => eventArray.push({ token, orders }));
-    const awaitedQueries = eventArray.map(async ({ token, orders }: any) => {
-      // let { token, orders } = obj;
-      // ** Iterate orders ** //
-      const orderQueries = orders.map(async (order: any) => {
-        console.log('have order:', order);
-        const contractOrder = await callOrders(YobotERC721LimitOrderContract, token, order.user);
-        const contractOrderPrice = contractOrder.priceInWeiEach.toString();
-        const contractOrderQuantity = contractOrder.quantity.toString();
-        const orderPrice = order.priceInWeiEach.toString();
-        const orderQuantity = order.quantity.toString();
+    MINTING_ABI,
+  ).then((obj) => {
+    const {
+      success,
+      bestEstimate,
+      successfulAbi,
+    } = obj;
+    // console.log('Got best estimate in wei:', parseInt(bestEstimate.toString(), 10));
+    // eslint-disable-next-line max-len
+    // console.log('Got best estimate in eth:', ethers.utils.formatUnits(bestEstimate.toString(), 'ether'));
+    // ** The ABI should be equal ** //
+    expect(successfulAbi).toEqual(MINTING_ABI);
+    // ** Should be a successful call ** //
+    expect(success).toBe(true);
+  }));
 
-        if (orderPrice === contractOrderPrice
-            && orderQuantity === contractOrderQuantity
-        ) {
-          const verifiedOrder = {
-            token,
-            user: order.user,
-            priceInWeiEach: contractOrderPrice,
-            quantity: contractOrderQuantity,
-          };
-          return verifiedOrder;
-        }
-      });
+  it('extracts the mint price without known abi', () => extractMintPrice(
+    MINTING_CONTRACT,
+    provider,
+  ).then((obj) => {
+    const {
+      success,
+      bestEstimate,
+      successfulAbi,
+    } = obj;
+    // console.log('Got best estimate in wei:', parseInt(bestEstimate.toString(), 10));
+    // eslint-disable-next-line max-len
+    // console.log('Got best estimate in eth:', ethers.utils.formatUnits(bestEstimate.toString(), 'ether'));
+    // console.log('Using abi:', successfulAbi);
+    // ** Should be a successful call ** //
+    expect(success).toBe(true);
+  }));
+});
 
-      return Promise.all(orderQueries).then((query) => query);
-    });
+// ************************* //
+// **  TEST TOTAL SUPPLY  ** //
+// ************************* //
+describe('total supply', () => {
+  it('extracts total supply using a known abi', () => extractTotalSupplies(
+    MINTING_CONTRACT,
+    provider,
+    TOTAL_SUPPLY_ABI,
+  ).then((obj) => {
+    const {
+      totalSupply,
+      successfulAbi,
+    } = obj;
+    // console.log('Got total supply:', totalSupply);
+    // ** The ABI should be equal ** //
+    expect(successfulAbi).toEqual(TOTAL_SUPPLY_ABI);
+    // ** Should be a successful call ** //
+    expect(totalSupply).toEqual(0);
+  }));
 
-    return Promise.all(awaitedQueries).then((verified_orders: any) => {
-      // ** Flatten and filter out undefined ** //
-      const flattenedOrders = [].concat(...verified_orders).filter(Boolean);
-      console.log('Verified Orders:', flattenedOrders);
-      expect(flattenedOrders.length).toBeGreaterThan(0);
-    });
+  it('extracts total supply without known abi', () => extractTotalSupplies(
+    MINTING_CONTRACT,
+    provider,
+  ).then((obj) => {
+    const {
+      totalSupply,
+      successfulAbi,
+    } = obj;
+    // console.log('Got total supply:', totalSupply);
+    // console.log('Using abi:', successfulAbi);
+    // ** Should be a successful call ** //
+    expect(totalSupply).toEqual(0);
+  }));
+});
+
+// *********************** //
+// **  TEST MAX SUPPLY  ** //
+// *********************** //
+describe('max supply', () => {
+  it('extracts max supply using a known abi', () => extractMaxSupplies(
+    MINTING_CONTRACT,
+    provider,
+    MAX_SUPPLY_ABI,
+  ).then((obj) => {
+    const {
+      maxSupply,
+      successfulAbi,
+    } = obj;
+    console.log('Got max supply:', parseInt(maxSupply.toString(), 10));
+    // ** The ABI should be equal ** //
+    expect(successfulAbi).toEqual(MAX_SUPPLY_ABI);
+    // ** Should be a successful call ** //
+    expect(parseInt(maxSupply.toString(), 10)).toBeGreaterThan(0);
+  }));
+
+  it('extracts max supply without known abi', () => extractMaxSupplies(
+    MINTING_CONTRACT,
+    provider,
+  ).then((obj) => {
+    const {
+      maxSupply,
+      successfulAbi,
+    } = obj;
+    console.log('Got max supply:', parseInt(maxSupply.toString(), 10));
+    console.log('Using abi:', successfulAbi);
+    // ** Should be a successful call ** //
+    expect(parseInt(maxSupply.toString(), 10)).toBeGreaterThan(0);
   }));
 });

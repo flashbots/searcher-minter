@@ -1,5 +1,6 @@
 [
   {
+    "type": "constructor",
     "inputs": [
       {
         "internalType": "address",
@@ -7,66 +8,36 @@
         "type": "address"
       },
       {
-        "internalType": "uint256",
+        "internalType": "uint32",
         "name": "_botFeeBips",
-        "type": "uint256"
+        "type": "uint32"
       }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
+    ]
   },
   {
-    "anonymous": false,
-    "inputs": [
+    "type": "function",
+    "name": "MAXIMUM_FEE",
+    "inputs": [],
+    "outputs": [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "_tokenAddress",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "_priceInWeiEach",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "_quantity",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "_action",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "_optionalTokenId",
-        "type": "uint256"
-      }
-    ],
-    "name": "Action",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
+        "internalType": "uint32",
         "name": "",
-        "type": "address"
+        "type": "uint32"
       }
     ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "balances",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "outputs": [
       {
         "internalType": "uint256",
@@ -74,77 +45,83 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "constant": null,
+    "stateMutability": "view"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "botFeeBips",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_tokenAddress",
-        "type": "address"
-      }
-    ],
-    "name": "cancelOrder",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_newBotFeeBips",
-        "type": "uint256"
-      }
-    ],
-    "name": "changeBotFeeBips",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newCoordinator",
-        "type": "address"
-      }
-    ],
-    "name": "changeCoordinator",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "_newProfitReceiver",
-        "type": "address"
-      }
-    ],
-    "name": "changeProfitReceiver",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
     "inputs": [],
+    "outputs": [
+      {
+        "internalType": "uint32",
+        "name": "",
+        "type": "uint32"
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "cancelOrder",
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_orderNum",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "changeBotFeeBips",
+    "inputs": [
+      {
+        "internalType": "uint32",
+        "name": "newBotFeeBips",
+        "type": "uint32"
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "changeCoordinator",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newCoordinator",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "changeProfitReceiver",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newProfitReceiver",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "coordinator",
+    "inputs": [],
     "outputs": [
       {
         "internalType": "address",
@@ -152,20 +129,17 @@
         "type": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "constant": null,
+    "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "fillMultipleOrdersOptimized",
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "_users",
-        "type": "address[]"
-      },
-      {
-        "internalType": "address",
-        "name": "_tokenAddress",
-        "type": "address"
+        "internalType": "uint256[]",
+        "name": "_orderIds",
+        "type": "uint256[]"
       },
       {
         "internalType": "uint256[]",
@@ -188,7 +162,6 @@
         "type": "bool"
       }
     ],
-    "name": "fillMultipleOrdersOptimized",
     "outputs": [
       {
         "internalType": "uint256[]",
@@ -196,20 +169,17 @@
         "type": "uint256[]"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "constant": null,
+    "stateMutability": "nonpayable"
   },
   {
+    "type": "function",
+    "name": "fillMultipleOrdersUnOptimized",
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "_users",
-        "type": "address[]"
-      },
-      {
-        "internalType": "address[]",
-        "name": "_tokenAddresses",
-        "type": "address[]"
+        "internalType": "uint256[]",
+        "name": "_orderIds",
+        "type": "uint256[]"
       },
       {
         "internalType": "uint256[]",
@@ -232,7 +202,6 @@
         "type": "bool[]"
       }
     ],
-    "name": "fillMultipleOrdersUnOptimized",
     "outputs": [
       {
         "internalType": "uint256[]",
@@ -240,20 +209,17 @@
         "type": "uint256[]"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "constant": null,
+    "stateMutability": "nonpayable"
   },
   {
+    "type": "function",
+    "name": "fillOrder",
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_user",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "_tokenAddress",
-        "type": "address"
+        "internalType": "uint256",
+        "name": "_orderId",
+        "type": "uint256"
       },
       {
         "internalType": "uint256",
@@ -276,7 +242,6 @@
         "type": "bool"
       }
     ],
-    "name": "fillOrder",
     "outputs": [
       {
         "internalType": "uint256",
@@ -284,39 +249,66 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "constant": null,
+    "stateMutability": "nonpayable"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "orders",
+    "type": "function",
+    "name": "orderId",
+    "inputs": [],
     "outputs": [
       {
-        "internalType": "uint128",
-        "name": "priceInWeiEach",
-        "type": "uint128"
-      },
-      {
-        "internalType": "uint128",
-        "name": "quantity",
-        "type": "uint128"
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "constant": null,
+    "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "orderStore",
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceInWeiEach",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "quantity",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "num",
+        "type": "uint256"
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "placeOrder",
     "inputs": [
       {
         "internalType": "address",
@@ -324,19 +316,19 @@
         "type": "address"
       },
       {
-        "internalType": "uint128",
+        "internalType": "uint256",
         "name": "_quantity",
-        "type": "uint128"
+        "type": "uint256"
       }
     ],
-    "name": "placeOrder",
     "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
+    "constant": null,
+    "stateMutability": "payable"
   },
   {
-    "inputs": [],
+    "type": "function",
     "name": "profitReceiver",
+    "inputs": [],
     "outputs": [
       {
         "internalType": "address payable",
@@ -344,10 +336,94 @@
         "type": "address"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "constant": null,
+    "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "userOrderCount",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "userOrders",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "viewMultipleOrders",
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_users",
+        "type": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "internalType": "struct YobotERC721LimitOrder.Order[][]",
+        "name": "output",
+        "type": "tuple[][]",
+        "components": [
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          }
+        ]
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "viewUserOrder",
     "inputs": [
       {
         "internalType": "address",
@@ -355,75 +431,275 @@
         "type": "address"
       },
       {
+        "internalType": "uint256",
+        "name": "_orderNum",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "internalType": "struct YobotERC721LimitOrder.Order",
+        "name": "",
+        "type": "tuple",
+        "components": [
+          {
+            "type": "address"
+          },
+          {
+            "type": "address"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          }
+        ]
+      }
+    ],
+    "constant": null,
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "viewUserOrders",
+    "inputs": [
+      {
         "internalType": "address",
-        "name": "_tokenAddress",
+        "name": "_user",
         "type": "address"
       }
     ],
-    "name": "viewOrder",
     "outputs": [
       {
+        "internalType": "struct YobotERC721LimitOrder.Order[]",
+        "name": "output",
+        "type": "tuple[]",
         "components": [
           {
-            "internalType": "uint128",
-            "name": "priceInWeiEach",
-            "type": "uint128"
+            "type": "address"
           },
           {
-            "internalType": "uint128",
-            "name": "quantity",
-            "type": "uint128"
+            "type": "address"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
+          },
+          {
+            "type": "uint256"
           }
-        ],
-        "internalType": "struct YobotERC721LimitOrder.Order",
-        "name": "",
-        "type": "tuple"
+        ]
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "constant": null,
+    "stateMutability": "view"
   },
   {
+    "type": "function",
+    "name": "withdraw",
+    "inputs": [],
+    "outputs": [],
+    "constant": null,
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "Action",
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "_users",
-        "type": "address[]"
+        "name": "_user",
+        "type": "address",
+        "indexed": true
       },
       {
-        "internalType": "address[]",
-        "name": "_tokenAddresses",
-        "type": "address[]"
-      }
-    ],
-    "name": "viewOrders",
-    "outputs": [
+        "name": "_tokenAddress",
+        "type": "address",
+        "indexed": true
+      },
       {
-        "components": [
-          {
-            "internalType": "uint128",
-            "name": "priceInWeiEach",
-            "type": "uint128"
-          },
-          {
-            "internalType": "uint128",
-            "name": "quantity",
-            "type": "uint128"
-          }
-        ],
-        "internalType": "struct YobotERC721LimitOrder.Order[]",
-        "name": "",
-        "type": "tuple[]"
+        "name": "_priceInWeiEach",
+        "type": "uint256",
+        "indexed": true
+      },
+      {
+        "name": "_quantity",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "_action",
+        "type": "string",
+        "indexed": false
+      },
+      {
+        "name": "_orderId",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "_orderNum",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "_tokenId",
+        "type": "uint256",
+        "indexed": false
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "anonymous": false
   },
   {
-    "inputs": [],
-    "name": "withdraw",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "type": "error",
+    "name": "FeeOverflow",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fee",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InconsistentArguments",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InsufficientPrice",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "orderId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "expectedPriceInWeiEach",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceInWeiEach",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidAmount",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceInWeiEach",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "quantity",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenAddress",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NonCoordinator",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "coordinator",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NonEOA",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OrderNonexistent",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "orderNumber",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "orderId",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OrderOOB",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "orderNumber",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxOrderCount",
+        "type": "uint256"
+      }
+    ]
   }
 ]
