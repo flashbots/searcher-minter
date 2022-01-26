@@ -54,6 +54,9 @@ describe('mint price', () => {
       bestEstimate,
       successfulAbi,
     } = obj;
+    console.log('Best mint estimate:', bestEstimate);
+    // console.log('Best mint estimate [0]:', bestEstimate[0]);
+    // console.log('Best mint estimate [0]:', bestEstimate[0]);
     // console.log('Got best estimate in wei:', parseInt(bestEstimate.toString(), 10));
     // eslint-disable-next-line max-len
     // console.log('Got best estimate in eth:', ethers.utils.formatUnits(bestEstimate.toString(), 'ether'));

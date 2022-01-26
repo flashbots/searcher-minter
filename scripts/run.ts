@@ -106,7 +106,7 @@ const enterCommand = (url: string, rl: any) => {
   // ** STATE ** //
   let orderUpdateCount = 0;
   let transactionCount = 0;
-  let verifiedOrders: YobotBid[] = [];
+  let verifiedOrders: any[] = [];
   let mintingLocked = false;
   let knownMintPriceAbi: string; // the abi to get the mint price
   let knownTotalSupplyAbi: string; // the abi to get the total supply
@@ -141,9 +141,10 @@ const enterCommand = (url: string, rl: any) => {
       // ** starting with most expensive bid ** //
       // ** NOTE: `sort` operates _in-place_, so we don't need reassignement ** //
       verifiedOrders.sort((a, b) => {
-        console.log('a.priceInWeiEach:', a.priceInWeiEach);
-        console.log('b.priceInWeiEach:', b.priceInWeiEach);
-        return b.priceInWeiEach - a.priceInWeiEach > 1 ? 1 : -1;
+        // ** Parse strings as big numbers ** //
+        const bp = BigNumber.from(b.priceInWeiEach);
+        const ap = BigNumber.from(a.priceInWeiEach);
+        return bp.sub(ap).gt(1) ? 1 : -1;
       });
 
       // ** Filter out orders that are not profitable... ** //
@@ -161,21 +162,29 @@ const enterCommand = (url: string, rl: any) => {
       console.log('Got successfuly mint abi:', successfulMintAbi);
       knownMintPriceAbi = successfulMintAbi;
       const minPrice = mintPrice.add(currentGasPrice);
-      const filteredOrders = verifiedOrders.filter((order: YobotBid) => BigNumber.from(order.priceInWeiEach).gte(minPrice));
+      const filteredOrders = verifiedOrders.filter((order: YobotBid) => minPrice.lt(order.priceInWeiEach));
 
       // ** Now, we have a list of profitable orders we want to mint for ** //
       // ** Check how many we can mint (MAX_SUPPLY - totalSupply) ** //
       const {
         totalSupply,
         successfulAbi: successfulTotalSupplyAbi,
-      } = await extractTotalSupplies(infiniteMint, provider, knownTotalSupplyAbi.length > 0 ? knownTotalSupplyAbi : undefined);
+      } = await extractTotalSupplies(
+        infiniteMint,
+        provider,
+        (knownTotalSupplyAbi !== undefined && knownTotalSupplyAbi.length > 0) ? knownTotalSupplyAbi : undefined,
+      );
       console.log('Got total supply:', totalSupply);
       console.log('Got successfuly total supply abi:', successfulTotalSupplyAbi);
       knownTotalSupplyAbi = successfulTotalSupplyAbi;
       const {
         maxSupply,
         successfulAbi: successfulMaxSupplyAbi,
-      } = await extractMaxSupplies(infiniteMint, provider, knownMaxSupplyAbi.length > 0 ? knownMaxSupplyAbi : undefined);
+      } = await extractMaxSupplies(
+        infiniteMint,
+        provider,
+        (knownMaxSupplyAbi !== undefined && knownMaxSupplyAbi.length > 0) ? knownMaxSupplyAbi : undefined,
+      );
       console.log('Got max supply:', maxSupply);
       console.log('Got successfuly max supply abi:', successfulMaxSupplyAbi);
       knownMaxSupplyAbi = successfulMaxSupplyAbi;

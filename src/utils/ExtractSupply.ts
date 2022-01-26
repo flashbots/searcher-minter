@@ -42,7 +42,7 @@ const extractTotalSupplies = async (
   if (typeof knownAbi !== 'undefined') {
     try {
       const mintContract = new Contract(address, [knownAbi], provider);
-      totalSupply = await mintContract.functions[knownAbi]();
+      [totalSupply] = await mintContract.functions[knownAbi]();
       successfulAbi = knownAbi;
     // eslint-disable-next-line no-empty
     } catch (e) {}
@@ -51,7 +51,7 @@ const extractTotalSupplies = async (
   for (const abi of potentialTotalSupplyAbis) {
     try {
       const mintContract = new Contract(address, [abi[1]], provider);
-      totalSupply = await mintContract.functions[abi[0]]();
+      [totalSupply] = await mintContract.functions[abi[0]]();
       [,successfulAbi] = abi;
       break; // break out of the loop if we successfully call
     // eslint-disable-next-line no-empty
@@ -76,7 +76,7 @@ const extractMaxSupplies = async (
   if (typeof knownAbi !== 'undefined') {
     try {
       const mintContract = new Contract(address, [knownAbi], provider);
-      maxSupply = await mintContract.functions[knownAbi]();
+      [maxSupply] = await mintContract.functions[knownAbi]();
       successfulAbi = knownAbi;
     // eslint-disable-next-line no-empty
     } catch (e) {}
@@ -84,7 +84,7 @@ const extractMaxSupplies = async (
   for (const abi of potentialMaxSupplyAbis) {
     try {
       const mintContract = new Contract(address, [abi[1]], provider);
-      maxSupply = await mintContract.functions[abi[0]]();
+      [maxSupply] = await mintContract.functions[abi[0]]();
       [,successfulAbi] = abi;
       break; // break out of the loop if we successfully call
     // eslint-disable-next-line no-empty

@@ -1,5 +1,6 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-console */
+import { BigNumber } from 'ethers';
 import {
   callOrders,
   compareOrderEvents,
@@ -7,6 +8,24 @@ import {
 } from '../src/utils';
 
 require('dotenv').config();
+
+const sortOrders = (verifiedOrders: any[]) => {
+  // ** Try to parse verified orders as big numbers ** //
+  verifiedOrders.sort((a, b) => {
+    console.log('a.priceInWeiEach:', a.priceInWeiEach);
+    console.log('b.priceInWeiEach:', b.priceInWeiEach);
+
+    // ** Parse strings as big numbers ** //
+    const bp = BigNumber.from(b.priceInWeiEach);
+    const ap = BigNumber.from(a.priceInWeiEach);
+    console.log('a.priceInWeiEach:', ap);
+    console.log('b.priceInWeiEach:', bp);
+
+    return bp.sub(ap).gt(1) ? 1 : -1;
+  });
+
+  return verifiedOrders;
+};
 
 // ** orders Function ** //
 async function orders() {
@@ -62,6 +81,9 @@ async function orders() {
   }
 
   console.log('Verified Orders:', verifiedOrders);
+
+  // ** Sort the orders in a separate function ** //
+  sortOrders(verifiedOrders);
 }
 
 orders();

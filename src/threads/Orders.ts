@@ -42,8 +42,8 @@ parentPort.on('message', async (data: any) => {
             order.user,
           );
           for (const fetchedOrder of fetchedOrders) {
-            const contractOrderPrice = fetchedOrder.priceInWeiEach;
-            const contractOrderQuantity = fetchedOrder.quantity;
+            const contractOrderPrice = fetchedOrder.priceInWeiEach.toString();
+            const contractOrderQuantity = fetchedOrder.quantity.toString();
 
             if (compareOrderEvents(fetchedOrder, order)) {
               const verifiedOrder = {

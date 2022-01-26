@@ -8,16 +8,16 @@
 const parseOrder = (order: any) => ({
   owner: order[0].toString(),
   tokenAddress: order[1].toString(),
-  priceInWeiEach: parseInt(order[2].toString(), 10),
-  quantity: parseInt(order[3].toString(), 10),
-  num: parseInt(order[4].toString(), 10),
+  priceInWeiEach: order[2],
+  quantity: order[3],
+  num: order[4],
 });
 
 // ** Helper to validate the Order ** //
 const validateOrder = (order: any) => (
   order.tokenAddress !== '0x0000000000000000000000000000000000000000'
-  && order.priceInWeiEach !== 0
-  && order.quantity !== 0
+  && parseInt(order.priceInWeiEach.toString(), 10) !== 0
+  && parseInt(order.quantity.toString(), 10) !== 0
   && order.owner !== '0x0000000000000000000000000000000000000000'
 );
 

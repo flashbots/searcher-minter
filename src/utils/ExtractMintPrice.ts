@@ -29,7 +29,7 @@ const extractMintPrice = async (
   if (typeof knownAbi !== 'undefined') {
     try {
       const mintContract = new Contract(address, [knownAbi], provider);
-      bestEstimate = await mintContract.functions[knownAbi]();
+      [bestEstimate] = await mintContract.functions[knownAbi]();
       successfulAbi = knownAbi;
       success = true;
     // eslint-disable-next-line no-empty
@@ -38,7 +38,7 @@ const extractMintPrice = async (
   for (const abi of potentialAbis) {
     try {
       const mintContract = new Contract(address, [abi[1]], provider);
-      bestEstimate = await mintContract.functions[abi[0]]();
+      [bestEstimate] = await mintContract.functions[abi[0]]();
       [,successfulAbi] = abi;
       success = true;
       break; // break out of the loop if we successfully call
