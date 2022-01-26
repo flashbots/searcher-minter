@@ -2,7 +2,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import { InfuraProvider } from '@ethersproject/providers';
-import { Contract } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 
 const potentialTotalSupplyAbis = [
   ['totalSupply', 'function totalSupply() public view returns (uint256)'],
@@ -35,7 +35,7 @@ const extractTotalSupplies = async (
   provider: InfuraProvider,
   knownAbi?: string,
 ) => {
-  let totalSupply = 0;
+  let totalSupply: BigNumber = BigNumber.from(0);
   let successfulAbi: string = '';
 
   // ** If we have a known ABI, let's use it to get the mint price! ** //
@@ -69,7 +69,7 @@ const extractMaxSupplies = async (
   provider: InfuraProvider,
   knownAbi?: string,
 ) => {
-  let maxSupply = 0;
+  let maxSupply: BigNumber = BigNumber.from(0);
   let successfulAbi: string = '';
 
   // ** If we have a known ABI, let's use it to get the mint price! ** //

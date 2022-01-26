@@ -1,6 +1,11 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-console */
-import { callOrders, configure, fetchSortedOrders } from '..';
+import {
+  callOrders,
+  compareOrderEvents,
+  configure,
+  fetchSortedOrders,
+} from '..';
 
 const { parentPort } = require('worker_threads');
 
@@ -32,26 +37,25 @@ parentPort.on('message', async (data: any) => {
         // ** Iterate orders ** //
         for (const order of orderList) {
           // eslint-disable-next-line no-await-in-loop
-          const contractOrder = await callOrders(
+          const fetchedOrders = await callOrders(
             yobotERC721LimitOrderContract,
-            token,
             order.user,
           );
-          const contractOrderPrice = contractOrder.priceInWeiEach.toString();
-          const contractOrderQuantity = contractOrder.quantity.toString();
-          const orderPrice = order.priceInWeiEach.toString();
-          const orderQuantity = order.quantity.toString();
+          for (const fetchedOrder of fetchedOrders) {
+            const contractOrderPrice = fetchedOrder.priceInWeiEach;
+            const contractOrderQuantity = fetchedOrder.quantity;
 
-          if (orderPrice === contractOrderPrice
-              && orderQuantity === contractOrderQuantity
-          ) {
-            const verifiedOrder = {
-              token,
-              user: order.user,
-              priceInWeiEach: contractOrderPrice,
-              quantity: contractOrderQuantity,
-            };
-            verifiedOrders.push(verifiedOrder);
+            if (compareOrderEvents(fetchedOrder, order)) {
+              const verifiedOrder = {
+                token,
+                user: order.user,
+                priceInWeiEach: contractOrderPrice,
+                quantity: contractOrderQuantity,
+                orderId: order.orderId,
+                orderNum: order.orderNum,
+              };
+              verifiedOrders.push(verifiedOrder);
+            }
           }
         }
       }

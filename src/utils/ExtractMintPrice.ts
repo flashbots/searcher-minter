@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import { InfuraProvider } from '@ethersproject/providers';
-import { BigNumber, BigNumberish, Contract } from 'ethers';
+import { BigNumber, Contract } from 'ethers';
 
 const potentialAbis = [
   ['PUBLIC_SALE_PRICE', 'function PUBLIC_SALE_PRICE() public view returns (uint256)'],
@@ -22,7 +22,7 @@ const extractMintPrice = async (
   knownAbi?: string,
 ) => {
   let success = false;
-  let bestEstimate: BigNumberish = BigNumber.from(0);
+  let bestEstimate: BigNumber = BigNumber.from(0);
   let successfulAbi: string = '';
 
   // ** If we have a known ABI, let's use it to get the mint price! ** //

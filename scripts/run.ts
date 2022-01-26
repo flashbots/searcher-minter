@@ -5,7 +5,7 @@
 /* eslint-disable max-len */
 /* eslint-disable no-console */
 import fetch from 'cross-fetch';
-import { BigNumber } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { FlashbotsTransactionResponse } from '@flashbots/ethers-provider-bundle';
 import { YobotBid } from '../src/types';
 import {
@@ -131,6 +131,8 @@ const enterCommand = (url: string, rl: any) => {
     console.log(`   └─ Network: ${result.network}`);
     console.log('-----------------------------------------');
 
+    postDiscord(discordWebhookUrl, params(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`));
+
     if (!mintingLocked) {
       mintingLocked = true;
       console.log('Minting not locked, proceeding to mint...');
@@ -138,7 +140,11 @@ const enterCommand = (url: string, rl: any) => {
       // ** Check how many we minted and filter those out of verified orders ** //
       // ** starting with most expensive bid ** //
       // ** NOTE: `sort` operates _in-place_, so we don't need reassignement ** //
-      verifiedOrders.sort((a, b) => b.priceInWeiEach.sub(a.priceInWeiEach).toNumber());
+      verifiedOrders.sort((a, b) => {
+        console.log('a.priceInWeiEach:', a.priceInWeiEach);
+        console.log('b.priceInWeiEach:', b.priceInWeiEach);
+        return b.priceInWeiEach - a.priceInWeiEach > 1 ? 1 : -1;
+      });
 
       // ** Filter out orders that are not profitable... ** //
       // ** ie: priceInWeiEach < gas price + mint cost ** //
@@ -146,10 +152,16 @@ const enterCommand = (url: string, rl: any) => {
       const {
         bestEstimate: mintPrice,
         successfulAbi: successfulMintAbi,
-      } = await extractMintPrice(infiniteMint, provider, knownMintPriceAbi.length > 0 ? knownMintPriceAbi : undefined);
+      } = await extractMintPrice(
+        infiniteMint,
+        provider,
+        (knownMintPriceAbi !== undefined && knownMintPriceAbi.length > 0) ? knownMintPriceAbi : undefined,
+      );
+      console.log('Got mint price:', mintPrice);
+      console.log('Got successfuly mint abi:', successfulMintAbi);
       knownMintPriceAbi = successfulMintAbi;
-      const minPrice = BigNumber.from(mintPrice).add(currentGasPrice);
-      const filteredOrders = verifiedOrders.filter((order: YobotBid) => order.priceInWeiEach.gte(minPrice));
+      const minPrice = mintPrice.add(currentGasPrice);
+      const filteredOrders = verifiedOrders.filter((order: YobotBid) => BigNumber.from(order.priceInWeiEach).gte(minPrice));
 
       // ** Now, we have a list of profitable orders we want to mint for ** //
       // ** Check how many we can mint (MAX_SUPPLY - totalSupply) ** //
@@ -157,13 +169,17 @@ const enterCommand = (url: string, rl: any) => {
         totalSupply,
         successfulAbi: successfulTotalSupplyAbi,
       } = await extractTotalSupplies(infiniteMint, provider, knownTotalSupplyAbi.length > 0 ? knownTotalSupplyAbi : undefined);
+      console.log('Got total supply:', totalSupply);
+      console.log('Got successfuly total supply abi:', successfulTotalSupplyAbi);
       knownTotalSupplyAbi = successfulTotalSupplyAbi;
       const {
         maxSupply,
         successfulAbi: successfulMaxSupplyAbi,
       } = await extractMaxSupplies(infiniteMint, provider, knownMaxSupplyAbi.length > 0 ? knownMaxSupplyAbi : undefined);
+      console.log('Got max supply:', maxSupply);
+      console.log('Got successfuly max supply abi:', successfulMaxSupplyAbi);
       knownMaxSupplyAbi = successfulMaxSupplyAbi;
-      const remainingSupply = BigNumber.from(maxSupply).sub(totalSupply);
+      const remainingSupply = maxSupply.sub(totalSupply);
 
       // ** Craft the transaction data ** //
       // TODO: refactor this into a function
@@ -299,7 +315,7 @@ const enterCommand = (url: string, rl: any) => {
   mempoolWorker.postMessage({
     type: 'start',
     MINTING_CONTRACT: infiniteMint,
-    chainId,
+    CHAIN_ID: chainId,
   });
   ordersWorker.postMessage({
     type: 'start',
