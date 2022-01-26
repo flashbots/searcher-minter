@@ -20,7 +20,8 @@
     "start": "npx ts-node src/index.ts",
     "scripts:mint": "npx ts-node scripts/mint.ts",
     "scripts:orders": "npx ts-node scripts/orders.ts",
-    "scripts:run": "npx ts-node scripts/run.ts"
+    "scripts:run": "npx ts-node scripts/run.ts",
+    "scripts:simulate": "npx ts-node scripts/simulate.ts"
   },
   "license": "Unlicense",
   "dependencies": {

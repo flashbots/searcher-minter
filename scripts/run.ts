@@ -162,7 +162,12 @@ const enterCommand = (url: string, rl: any) => {
       console.log('Got successfuly mint abi:', successfulMintAbi);
       knownMintPriceAbi = successfulMintAbi;
       const minPrice = mintPrice.add(currentGasPrice);
-      const filteredOrders = verifiedOrders.filter((order: YobotBid) => minPrice.lt(order.priceInWeiEach));
+      console.log('Filtering with minPrice:', minPrice.toString());
+      const filteredOrders = verifiedOrders.filter((order: YobotBid) => {
+        console.log('Comparing minPrice to order priceInWeiEach:', order.priceInWeiEach.toString());
+        return minPrice.lt(order.priceInWeiEach);
+      });
+      console.log('Got filtered orders:', filteredOrders);
 
       // ** Now, we have a list of profitable orders we want to mint for ** //
       // ** Check how many we can mint (MAX_SUPPLY - totalSupply) ** //
@@ -189,6 +194,7 @@ const enterCommand = (url: string, rl: any) => {
       console.log('Got successfuly max supply abi:', successfulMaxSupplyAbi);
       knownMaxSupplyAbi = successfulMaxSupplyAbi;
       const remainingSupply = maxSupply.sub(totalSupply);
+      console.log('Remaining supply:', remainingSupply);
 
       // ** Craft the transaction data ** //
       // TODO: refactor this into a function
@@ -218,6 +224,8 @@ const enterCommand = (url: string, rl: any) => {
         );
         transactions.push(tx);
       }
+
+      console.log('Transactions:', transactions);
 
       // ** Craft a signed bundle of transactions ** //
       const {
