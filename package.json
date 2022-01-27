@@ -1,6 +1,6 @@
 {
   "name": "yobot-searcher",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Yobot Searcher is a Typescript server that posts flashbot bundles for executing [Yobot](https://yobot.co) bids.",
   "authors": [
     "Andreas Bigger <andreas@nascent.xyz>"
