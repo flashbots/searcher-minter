@@ -29,8 +29,8 @@ const configure = () => {
   // **  Optionally Specify the Max Supply ABI ** //
   const { MAX_SUPPLY_ABI } = process.env;
 
-  // ** Discord Webhook ** //
-  const { DISCORD_WEBHOOK_URL } = process.env;
+  // ** Discord Webhooks ** //
+  const { DISCORD_WEBHOOK_URL, PUBLIC_DISCORD_WEBHOOK_URL } = process.env;
 
   // ** Contract we want to mint from ** //
   const MINTING_CONTRACT = process.env.ERC721_CONTRACT_ADDRESS ? process.env.ERC721_CONTRACT_ADDRESS : '';
@@ -100,6 +100,7 @@ const configure = () => {
     YobotInfiniteMintInterface,
     MINTING_CONTRACT,
     DISCORD_WEBHOOK_URL,
+    PUBLIC_DISCORD_WEBHOOK_URL,
     MINTING_ABI,
     TOTAL_SUPPLY_ABI,
     MAX_SUPPLY_ABI,

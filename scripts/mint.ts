@@ -125,10 +125,10 @@ async function main() {
 
   console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
 
-  const didSimulationError = validateSimulation(simulation);
+  const validSimulation = validateSimulation(simulation);
 
   // ** Send the Bundle if not ** //
-  if (!didSimulationError) {
+  if (validSimulation) {
     console.log('Sending the bundle...');
     const bundleRes = await sendFlashbotsBundle(
       fbp,

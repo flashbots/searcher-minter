@@ -94,6 +94,7 @@ const enterCommand = (url: string, rl: any) => {
     YobotInfiniteMintInterface: yobotInfiniteMintInterface,
     MINTING_CONTRACT: infiniteMint,
     DISCORD_WEBHOOK_URL: discordWebhookUrl,
+    PUBLIC_DISCORD_WEBHOOK_URL: pubDiscordWebhook,
   } = configure();
 
   // ** Create Flashbots Provider ** //
@@ -203,22 +204,35 @@ const enterCommand = (url: string, rl: any) => {
       const remainingSupply = maxSupply.sub(totalSupply);
       console.log('Remaining supply:', remainingSupply);
 
-      // ** Craft the transaction data ** //
-      // TODO: refactor this into a function
-      const data = yobotInfiniteMintInterface.encodeFunctionData(
-        'mint',
-        [
-          '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
-          ethers.utils.randomBytes(32), // uint256 tokenId
-        ],
-      );
-
       // ** Check enough left to mint from the total supply ** //
       const remainingOrders = filteredOrders.slice(0, remainingSupply.toNumber());
+
+      // ** Try to get the total supply as a number ** //
+      let totalSupplyNum: number = 0;
+      try {
+        totalSupplyNum = totalSupply.toNumber();
+      } catch (e) {
+        try {
+          totalSupplyNum = parseInt(totalSupply.toString(), 10);
+        } catch (ex) {
+          console.log('Failed to impute the total supply as a number :((');
+        }
+      }
 
       // ** Map Orders to transactions ** //
       const transactions: any[] = [];
       for (const order of remainingOrders) {
+        // ** Craft the transaction data ** //
+        // TODO: refactor this into a function
+        const data = yobotInfiniteMintInterface.encodeFunctionData(
+          'mint',
+          [
+            '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
+            totalSupply.toNumber(),
+            // ethers.utils.randomBytes(32), // uint256 tokenId
+          ],
+        );
+
         // ** Craft mintable transactions ** //
         const tx = await craftTransaction(
           provider,
@@ -273,14 +287,14 @@ const enterCommand = (url: string, rl: any) => {
       console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
 
       // ** Send Bundle to Flashbots ** //
-      if (!validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
+      if (validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
         postDiscord(
           discordWebhookUrl,
-          '✅ SIMULATION SUCCESSFUL ✅',
+          params('✅ SIMULATION SUCCESSFUL ✅'),
         );
         postDiscord(
           discordWebhookUrl,
-          `💨 SENDING FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${transactions.length}`,
+          params(`💨 SENDING FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${transactions.length}`),
         );
         const bundleRes = await sendFlashbotsBundle(
           fbp,
@@ -294,7 +308,7 @@ const enterCommand = (url: string, rl: any) => {
 
         postDiscord(
           discordWebhookUrl,
-          `🚀 BUNDLE SENT - ${JSON.stringify(bundleRes)}`,
+          params(`🚀 BUNDLE SENT - ${JSON.stringify(bundleRes)}`),
         );
 
         // ** Wait the response ** //
@@ -305,7 +319,7 @@ const enterCommand = (url: string, rl: any) => {
 
         postDiscord(
           discordWebhookUrl,
-          `🎉 AWAITED BUNDLE RESPONSE - ${JSON.stringify(simulatedBundleRes)}`,
+          params(`🎉 AWAITED BUNDLE RESPONSE - ${JSON.stringify(simulatedBundleRes)}`),
         );
 
         // ** User Stats isn't implemented on goerli ** //
@@ -315,8 +329,13 @@ const enterCommand = (url: string, rl: any) => {
           // const bundleStats = await fbp.getBundleStats(simulation.bundleHash, targetBlockNumber);
           // console.log('Bundle stats:', JSON.stringify(bundleStats));
 
-          const userStats = await fbp.getUserStats();
-          console.log('User stats:', JSON.stringify(userStats));
+          const searcherStats = await fbp.getUserStats();
+          console.log('User stats:', JSON.stringify(searcherStats));
+
+          postDiscord(
+            discordWebhookUrl,
+            params(`👑 SEARCHER STATS: ${JSON.stringify(searcherStats)}`),
+          );
         }
 
         // ** Wait for the tx to be mined ** //
@@ -327,7 +346,7 @@ const enterCommand = (url: string, rl: any) => {
         console.log('Simulation failed, discarding bundle...');
         postDiscord(
           discordWebhookUrl,
-          'SIMULATION FAILED - DISCARDING BUNDLE',
+          params('❌ SIMULATION FAILED - DISCARDING BUNDLE ❌'),
         );
       }
 
@@ -340,7 +359,7 @@ const enterCommand = (url: string, rl: any) => {
       console.log('Minting locked');
       postDiscord(
         discordWebhookUrl,
-        '🔒 MINTING LOCKED 🔒',
+        params('🔒 MINTING LOCKED 🔒'),
       );
     }
   };
