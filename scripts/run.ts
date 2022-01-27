@@ -138,7 +138,7 @@ const enterCommand = (url: string, rl: any) => {
       console.log(`   ├─ Timestamp: ${result.timestamp}`);
       console.log(`   └─ Network: ${result.network}`);
       console.log('-----------------------------------------');
-      postDiscord(discordWebhookUrl, params(`📦 [${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`));
+      postDiscord(discordWebhookUrl, params(`📦 [${transactionCount}] MEMPOOL TRANSACTION DETECTED [${result.direction.toUpperCase()}] 📦`));
     }
 
     if (!mintingLocked) {

@@ -101,7 +101,7 @@ describe('total supply', () => {
     // ** The ABI should be equal ** //
     expect(successfulAbi).toEqual(TOTAL_SUPPLY_ABI);
     // ** Should be a successful call ** //
-    expect(totalSupply).toEqual(0);
+    expect(totalSupply.toNumber()).toEqual(0);
   }));
 
   it('extracts total supply without known abi', () => extractTotalSupplies(
@@ -115,7 +115,7 @@ describe('total supply', () => {
     // console.log('Got total supply:', totalSupply);
     // console.log('Using abi:', successfulAbi);
     // ** Should be a successful call ** //
-    expect(totalSupply).toEqual(0);
+    expect(totalSupply.toNumber()).toEqual(0);
   }));
 });
 

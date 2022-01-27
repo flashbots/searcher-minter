@@ -4,10 +4,10 @@ const validateSimulation = (simulation: any) => {
   let valid = true;
 
   // ** If error is present in the object, return invalid ** //
-  if ('error' in Object.keys(simulation)) return false;
+  if (Object.keys(simulation).includes('error')) return false;
 
   // ** If no results in simulation, invalid ** //
-  if (!('results' in Object.keys(simulation))) return false;
+  if (!Object.keys(simulation).includes('results')) return false;
 
   // ** Otherwise try to loop over results ** //
   simulation.results.forEach((result: any) => {
