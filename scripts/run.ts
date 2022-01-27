@@ -114,24 +114,30 @@ const enterCommand = (url: string, rl: any) => {
 
   // TODO: Check if abi function signatures are defined by environment variables!
 
-  // ** Create the Blocknative Mempool Listner Worker ** //
-  const mempoolWorker = new Worker('./src/threads/Mempool.js');
+  // ** ///////////////////////////////////////// ** //
+  // ** ///////////////////////////////////////// ** //
+  // **                                           ** //
+  // **             Trigger Minting               ** //
+  // **                                           ** //
+  // ** ///////////////////////////////////////// ** //
+  // ** ///////////////////////////////////////// ** //
 
-  mempoolWorker.on('message', async (result: any) => {
-    transactionCount += 1;
-    console.log('-----------------------------------------');
-    console.log(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`);
-    console.log(`   ├─ Status: ${result.status}`);
-    console.log(`   ├─ From: ${result.from}`);
-    console.log(`   ├─ To: ${result.to}`);
-    console.log(`   ├─ Gas Price: ${result.gasPrice}`);
-    console.log(`   ├─ Gas Price Gwei: ${result.gasPriceGwei}`);
-    console.log(`   ├─ Gas Used: ${result.gasUsed}`);
-    console.log(`   ├─ Timestamp: ${result.timestamp}`);
-    console.log(`   └─ Network: ${result.network}`);
-    console.log('-----------------------------------------');
-
-    postDiscord(discordWebhookUrl, params(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`));
+  const mintHandler = async (result: any) => {
+    if (result !== 'TIME_GRANULARITY') {
+      transactionCount += 1;
+      console.log('-----------------------------------------');
+      console.log(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`);
+      console.log(`   ├─ Status: ${result.status}`);
+      console.log(`   ├─ From: ${result.from}`);
+      console.log(`   ├─ To: ${result.to}`);
+      console.log(`   ├─ Gas Price: ${result.gasPrice}`);
+      console.log(`   ├─ Gas Price Gwei: ${result.gasPriceGwei}`);
+      console.log(`   ├─ Gas Used: ${result.gasUsed}`);
+      console.log(`   ├─ Timestamp: ${result.timestamp}`);
+      console.log(`   └─ Network: ${result.network}`);
+      console.log('-----------------------------------------');
+      postDiscord(discordWebhookUrl, params(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`));
+    }
 
     if (!mintingLocked) {
       mintingLocked = true;
@@ -227,6 +233,14 @@ const enterCommand = (url: string, rl: any) => {
 
       console.log('Transactions:', transactions);
 
+      // !!!!! EXIT IF NO TRANSACTIONS !!!!! //
+      if (transactions.length <= 0) {
+        // ** Release the Minting Lock ** //
+        mintingLocked = false;
+        return;
+      }
+      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
+
       // ** Craft a signed bundle of transactions ** //
       const {
         targetBlockNumber,
@@ -288,11 +302,31 @@ const enterCommand = (url: string, rl: any) => {
         // console.log('Awaited response:', JSON.stringify(waitResponse));
       } else {
         console.log('Simulation failed, discarding bundle...');
+        postDiscord(
+          discordWebhookUrl,
+          'SIMULATION FAILED - DISCARDING BUNDLE',
+        );
       }
 
       // ** Record how many we minted ** //
+
+      // ** Release the Minting Lock ** //
+      mintingLocked = false;
     }
-  });
+  };
+
+  // ** ///////////////////////////////////////// ** //
+  // ** ///////////////////////////////////////// ** //
+  // **                                           ** //
+  // **                  WORKERS                  ** //
+  // **                                           ** //
+  // ** ///////////////////////////////////////// ** //
+  // ** ///////////////////////////////////////// ** //
+
+  // ** Create the Blocknative Mempool Listner Worker ** //
+  const mempoolWorker = new Worker('./src/threads/Mempool.js');
+
+  mempoolWorker.on('message', mintHandler);
 
   mempoolWorker.on('error', (error: any) => {
     console.error('Mempool Worker Errored!');
@@ -328,13 +362,36 @@ const enterCommand = (url: string, rl: any) => {
     postDiscord(discordWebhookUrl, params('Orders Worker Exited!'));
   });
 
-  // ** Start Both Workers ** //
+  // ** Create the Interval Actor ** //
+  const intervalWorker = new Worker('./src/threads/Interval.js');
+
+  intervalWorker.on('message', async (trigger: any) => {
+    console.log(`INTERVAL TRIGGER [${new Date().getTime()}]`);
+    await mintHandler(trigger);
+  });
+
+  intervalWorker.on('error', (error: any) => {
+    console.error('Interval Worker Errored!');
+    console.error(error);
+    postDiscord(discordWebhookUrl, params('Interval Worker Errored!'));
+  });
+
+  intervalWorker.on('exit', (exitCode: any) => {
+    console.warn('Interval Worker Exited!');
+    console.warn(exitCode);
+    postDiscord(discordWebhookUrl, params('Interval Worker Exited!'));
+  });
+
+  // ** Start Workers ** //
   mempoolWorker.postMessage({
     type: 'start',
     MINTING_CONTRACT: infiniteMint,
     CHAIN_ID: chainId,
   });
   ordersWorker.postMessage({
+    type: 'start',
+  });
+  intervalWorker.postMessage({
     type: 'start',
   });
 
