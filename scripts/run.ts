@@ -107,6 +107,7 @@ const enterCommand = (url: string, rl: any) => {
   let orderUpdateCount = 0;
   let transactionCount = 0;
   let verifiedOrders: any[] = [];
+  let mintedOrders: any[] = [];
   let mintingLocked = false;
   let knownMintPriceAbi: string; // the abi to get the mint price
   let knownTotalSupplyAbi: string; // the abi to get the total supply
@@ -136,7 +137,7 @@ const enterCommand = (url: string, rl: any) => {
       console.log(`   ├─ Timestamp: ${result.timestamp}`);
       console.log(`   └─ Network: ${result.network}`);
       console.log('-----------------------------------------');
-      postDiscord(discordWebhookUrl, params(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`));
+      postDiscord(discordWebhookUrl, params(`📦 [${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`));
     }
 
     if (!mintingLocked) {
@@ -212,9 +213,12 @@ const enterCommand = (url: string, rl: any) => {
         ],
       );
 
+      // ** Check enough left to mint from the total supply ** //
+      const remainingOrders = filteredOrders.slice(0, remainingSupply.toNumber());
+
       // ** Map Orders to transactions ** //
       const transactions: any[] = [];
-      for (const order of filteredOrders.slice(0, remainingSupply.toNumber())) {
+      for (const order of remainingOrders) {
         // ** Craft mintable transactions ** //
         const tx = await craftTransaction(
           provider,
@@ -235,6 +239,8 @@ const enterCommand = (url: string, rl: any) => {
 
       // !!!!! EXIT IF NO TRANSACTIONS !!!!! //
       if (transactions.length <= 0) {
+        // TODO: alert a public discord channel if orders don't have enough wei
+
         // ** Release the Minting Lock ** //
         mintingLocked = false;
         return;
@@ -268,7 +274,14 @@ const enterCommand = (url: string, rl: any) => {
 
       // ** Send Bundle to Flashbots ** //
       if (!validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
-        console.log('Sending the bundle...');
+        postDiscord(
+          discordWebhookUrl,
+          '✅ SIMULATION SUCCESSFUL ✅',
+        );
+        postDiscord(
+          discordWebhookUrl,
+          `💨 SENDING FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${transactions.length}`,
+        );
         const bundleRes = await sendFlashbotsBundle(
           fbp,
           targetBlockNumber,
@@ -279,11 +292,21 @@ const enterCommand = (url: string, rl: any) => {
         const didBundleError = validateSubmitResponse(bundleRes);
         console.error(`Did bundle submission error: ${didBundleError}`);
 
+        postDiscord(
+          discordWebhookUrl,
+          `🚀 BUNDLE SENT - ${JSON.stringify(bundleRes)}`,
+        );
+
         // ** Wait the response ** //
         const simulatedBundleRes = await (bundleRes as FlashbotsTransactionResponse).simulate();
         console.log('Simulated bundle response:', JSON.stringify(simulatedBundleRes));
         const awaiting = await (bundleRes as FlashbotsTransactionResponse).wait();
         console.log('Awaited response:', JSON.stringify(awaiting));
+
+        postDiscord(
+          discordWebhookUrl,
+          `🎉 AWAITED BUNDLE RESPONSE - ${JSON.stringify(simulatedBundleRes)}`,
+        );
 
         // ** User Stats isn't implemented on goerli ** //
         if (chainId !== 5) {
@@ -308,10 +331,17 @@ const enterCommand = (url: string, rl: any) => {
         );
       }
 
-      // ** Record how many we minted ** //
+      // ** Record Minted Transactions ** //
+      mintedOrders = [...mintedOrders, ...remainingOrders];
 
       // ** Release the Minting Lock ** //
       mintingLocked = false;
+    } else {
+      console.log('Minting locked');
+      postDiscord(
+        discordWebhookUrl,
+        '🔒 MINTING LOCKED 🔒',
+      );
     }
   };
 
