@@ -24,4 +24,5 @@ jobs:
         MINTING_ABI: ${{ secrets.MINTING_ABI }}
         MAX_SUPPLY_ABI: ${{ secrets.MAX_SUPPLY_ABI }}
         YOBOT_LIMIT_ORDER_CONTRACT: ${{ secrets.YOBOT_LIMIT_ORDER_CONTRACT }}
+        TOTAL_SUPPLY_ABI: ${{ secrets.TOTAL_SUPPLY_ABI }}
       run: yarn test
