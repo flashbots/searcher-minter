@@ -123,8 +123,8 @@ describe('flashbots bundles', () => {
         transactionBundle,
       ).then((simulation) => {
         console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
-        // expect the simulation not to have errors
-        expect(validateSimulation(simulation)).toBe(false);
+        // ** Expect the simulation to be valid ** //
+        expect(validateSimulation(simulation)).toBe(true);
       });
     })));
   });

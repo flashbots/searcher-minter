@@ -94,6 +94,7 @@ const enterCommand = (url: string, rl: any) => {
     YobotInfiniteMintInterface: yobotInfiniteMintInterface,
     MINTING_CONTRACT: infiniteMint,
     DISCORD_WEBHOOK_URL: discordWebhookUrl,
+    PUBLIC_DISCORD_WEBHOOK_URL: pubDiscordWebhook,
   } = configure();
 
   // ** Create Flashbots Provider ** //
@@ -107,6 +108,7 @@ const enterCommand = (url: string, rl: any) => {
   let orderUpdateCount = 0;
   let transactionCount = 0;
   let verifiedOrders: any[] = [];
+  let mintedOrders: any[] = [];
   let mintingLocked = false;
   let knownMintPriceAbi: string; // the abi to get the mint price
   let knownTotalSupplyAbi: string; // the abi to get the total supply
@@ -114,24 +116,30 @@ const enterCommand = (url: string, rl: any) => {
 
   // TODO: Check if abi function signatures are defined by environment variables!
 
-  // ** Create the Blocknative Mempool Listner Worker ** //
-  const mempoolWorker = new Worker('./src/threads/Mempool.js');
+  // ** ///////////////////////////////////////// ** //
+  // ** ///////////////////////////////////////// ** //
+  // **                                           ** //
+  // **             Trigger Minting               ** //
+  // **                                           ** //
+  // ** ///////////////////////////////////////// ** //
+  // ** ///////////////////////////////////////// ** //
 
-  mempoolWorker.on('message', async (result: any) => {
-    transactionCount += 1;
-    console.log('-----------------------------------------');
-    console.log(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`);
-    console.log(`   ├─ Status: ${result.status}`);
-    console.log(`   ├─ From: ${result.from}`);
-    console.log(`   ├─ To: ${result.to}`);
-    console.log(`   ├─ Gas Price: ${result.gasPrice}`);
-    console.log(`   ├─ Gas Price Gwei: ${result.gasPriceGwei}`);
-    console.log(`   ├─ Gas Used: ${result.gasUsed}`);
-    console.log(`   ├─ Timestamp: ${result.timestamp}`);
-    console.log(`   └─ Network: ${result.network}`);
-    console.log('-----------------------------------------');
-
-    postDiscord(discordWebhookUrl, params(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`));
+  const mintHandler = async (result: any) => {
+    if (result !== 'TIME_GRANULARITY') {
+      transactionCount += 1;
+      console.log('-----------------------------------------');
+      console.log(`[${transactionCount}] [${result.direction.toUpperCase()}] Transaction Received by Mempool Worker`);
+      console.log(`   ├─ Status: ${result.status}`);
+      console.log(`   ├─ From: ${result.from}`);
+      console.log(`   ├─ To: ${result.to}`);
+      console.log(`   ├─ Gas Price: ${result.gasPrice}`);
+      console.log(`   ├─ Gas Price Gwei: ${result.gasPriceGwei}`);
+      console.log(`   ├─ Gas Used: ${result.gasUsed}`);
+      console.log(`   ├─ Timestamp: ${result.timestamp}`);
+      console.log(`   └─ Network: ${result.network}`);
+      console.log('-----------------------------------------');
+      postDiscord(discordWebhookUrl, params(`📦 [${transactionCount}] MEMPOOL TRANSACTION DETECTED [${result.direction.toUpperCase()}] 📦`));
+    }
 
     if (!mintingLocked) {
       mintingLocked = true;
@@ -196,19 +204,35 @@ const enterCommand = (url: string, rl: any) => {
       const remainingSupply = maxSupply.sub(totalSupply);
       console.log('Remaining supply:', remainingSupply);
 
-      // ** Craft the transaction data ** //
-      // TODO: refactor this into a function
-      const data = yobotInfiniteMintInterface.encodeFunctionData(
-        'mint',
-        [
-          '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
-          ethers.utils.randomBytes(32), // uint256 tokenId
-        ],
-      );
+      // ** Check enough left to mint from the total supply ** //
+      const remainingOrders = filteredOrders.slice(0, remainingSupply.toNumber());
+
+      // ** Try to get the total supply as a number ** //
+      let totalSupplyNum: number = 0;
+      try {
+        totalSupplyNum = totalSupply.toNumber();
+      } catch (e) {
+        try {
+          totalSupplyNum = parseInt(totalSupply.toString(), 10);
+        } catch (ex) {
+          console.log('Failed to impute the total supply as a number :((');
+        }
+      }
 
       // ** Map Orders to transactions ** //
       const transactions: any[] = [];
-      for (const order of filteredOrders.slice(0, remainingSupply.toNumber())) {
+      for (const order of remainingOrders) {
+        // ** Craft the transaction data ** //
+        // TODO: refactor this into a function
+        const data = yobotInfiniteMintInterface.encodeFunctionData(
+          'mint',
+          [
+            '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
+            totalSupply.toNumber(),
+            // ethers.utils.randomBytes(32), // uint256 tokenId
+          ],
+        );
+
         // ** Craft mintable transactions ** //
         const tx = await craftTransaction(
           provider,
@@ -226,6 +250,16 @@ const enterCommand = (url: string, rl: any) => {
       }
 
       console.log('Transactions:', transactions);
+
+      // !!!!! EXIT IF NO TRANSACTIONS !!!!! //
+      if (transactions.length <= 0) {
+        // TODO: alert a public discord channel if orders don't have enough wei
+
+        // ** Release the Minting Lock ** //
+        mintingLocked = false;
+        return;
+      }
+      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 
       // ** Craft a signed bundle of transactions ** //
       const {
@@ -253,8 +287,15 @@ const enterCommand = (url: string, rl: any) => {
       console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
 
       // ** Send Bundle to Flashbots ** //
-      if (!validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
-        console.log('Sending the bundle...');
+      if (validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
+        postDiscord(
+          discordWebhookUrl,
+          params('✅ SIMULATION SUCCESSFUL ✅'),
+        );
+        postDiscord(
+          discordWebhookUrl,
+          params(`💨 SENDING FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${transactions.length}`),
+        );
         const bundleRes = await sendFlashbotsBundle(
           fbp,
           targetBlockNumber,
@@ -265,11 +306,21 @@ const enterCommand = (url: string, rl: any) => {
         const didBundleError = validateSubmitResponse(bundleRes);
         console.error(`Did bundle submission error: ${didBundleError}`);
 
+        postDiscord(
+          discordWebhookUrl,
+          params(`🚀 BUNDLE SENT - ${JSON.stringify(bundleRes)}`),
+        );
+
         // ** Wait the response ** //
         const simulatedBundleRes = await (bundleRes as FlashbotsTransactionResponse).simulate();
         console.log('Simulated bundle response:', JSON.stringify(simulatedBundleRes));
         const awaiting = await (bundleRes as FlashbotsTransactionResponse).wait();
         console.log('Awaited response:', JSON.stringify(awaiting));
+
+        postDiscord(
+          discordWebhookUrl,
+          params(`🎉 AWAITED BUNDLE RESPONSE - ${JSON.stringify(simulatedBundleRes)}`),
+        );
 
         // ** User Stats isn't implemented on goerli ** //
         if (chainId !== 5) {
@@ -278,8 +329,13 @@ const enterCommand = (url: string, rl: any) => {
           // const bundleStats = await fbp.getBundleStats(simulation.bundleHash, targetBlockNumber);
           // console.log('Bundle stats:', JSON.stringify(bundleStats));
 
-          const userStats = await fbp.getUserStats();
-          console.log('User stats:', JSON.stringify(userStats));
+          const searcherStats = await fbp.getUserStats();
+          console.log('User stats:', JSON.stringify(searcherStats));
+
+          postDiscord(
+            discordWebhookUrl,
+            params(`👑 SEARCHER STATS: ${JSON.stringify(searcherStats)}`),
+          );
         }
 
         // ** Wait for the tx to be mined ** //
@@ -288,11 +344,38 @@ const enterCommand = (url: string, rl: any) => {
         // console.log('Awaited response:', JSON.stringify(waitResponse));
       } else {
         console.log('Simulation failed, discarding bundle...');
+        postDiscord(
+          discordWebhookUrl,
+          params('❌ SIMULATION FAILED - DISCARDING BUNDLE ❌'),
+        );
       }
 
-      // ** Record how many we minted ** //
+      // ** Record Minted Transactions ** //
+      mintedOrders = [...mintedOrders, ...remainingOrders];
+
+      // ** Release the Minting Lock ** //
+      mintingLocked = false;
+    } else {
+      console.log('Minting locked');
+      postDiscord(
+        discordWebhookUrl,
+        params('🔒 MINTING LOCKED 🔒'),
+      );
     }
-  });
+  };
+
+  // ** ///////////////////////////////////////// ** //
+  // ** ///////////////////////////////////////// ** //
+  // **                                           ** //
+  // **                  WORKERS                  ** //
+  // **                                           ** //
+  // ** ///////////////////////////////////////// ** //
+  // ** ///////////////////////////////////////// ** //
+
+  // ** Create the Blocknative Mempool Listner Worker ** //
+  const mempoolWorker = new Worker('./src/threads/Mempool.js');
+
+  mempoolWorker.on('message', mintHandler);
 
   mempoolWorker.on('error', (error: any) => {
     console.error('Mempool Worker Errored!');
@@ -328,13 +411,36 @@ const enterCommand = (url: string, rl: any) => {
     postDiscord(discordWebhookUrl, params('Orders Worker Exited!'));
   });
 
-  // ** Start Both Workers ** //
+  // ** Create the Interval Actor ** //
+  const intervalWorker = new Worker('./src/threads/Interval.js');
+
+  intervalWorker.on('message', async (trigger: any) => {
+    console.log(`INTERVAL TRIGGER [${new Date().getTime()}]`);
+    await mintHandler(trigger);
+  });
+
+  intervalWorker.on('error', (error: any) => {
+    console.error('Interval Worker Errored!');
+    console.error(error);
+    postDiscord(discordWebhookUrl, params('Interval Worker Errored!'));
+  });
+
+  intervalWorker.on('exit', (exitCode: any) => {
+    console.warn('Interval Worker Exited!');
+    console.warn(exitCode);
+    postDiscord(discordWebhookUrl, params('Interval Worker Exited!'));
+  });
+
+  // ** Start Workers ** //
   mempoolWorker.postMessage({
     type: 'start',
     MINTING_CONTRACT: infiniteMint,
     CHAIN_ID: chainId,
   });
   ordersWorker.postMessage({
+    type: 'start',
+  });
+  intervalWorker.postMessage({
     type: 'start',
   });
 
