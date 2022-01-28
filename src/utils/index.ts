@@ -17,6 +17,7 @@ export { default as fetchAllERC721LimitOrderEvents } from './FetchAllERC721Limit
 export { default as fetchLatestOrders } from './FetchLatestOrders';
 export { default as fetchSortedOrders } from './FetchSortedOrders';
 export { default as filterEvents } from './FilterEvents';
+export { default as fetchMintingEvents } from './FetchMintingEvents';
 
 // Miscellaneous
 export { default as compareOrderEvents } from './CompareOrderEvent';

@@ -4,11 +4,8 @@
 import { BigNumber } from 'ethers';
 import {
   callBalance,
-  callOrders,
-  compareOrderEvents,
   configure,
-  fetchSortedOrders,
-  fillOrder,
+  fetchMintingEvents,
 } from '../src/utils';
 
 require('dotenv').config();
@@ -20,33 +17,13 @@ require('dotenv').config();
 // !!                                 !! //
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 
-console.log('Filling Open Orders...');
-
-const sortOrders = (verifiedOrders: any[]) => {
-  // ** Try to parse verified orders as big numbers ** //
-  verifiedOrders.sort((a, b) => {
-    console.log('a.priceInWeiEach:', a.priceInWeiEach);
-    console.log('b.priceInWeiEach:', b.priceInWeiEach);
-
-    // ** Parse strings as big numbers ** //
-    const bp = BigNumber.from(b.priceInWeiEach);
-    const ap = BigNumber.from(a.priceInWeiEach);
-    console.log('a.priceInWeiEach:', ap);
-    console.log('b.priceInWeiEach:', bp);
-
-    return bp.sub(ap).gt(1) ? 1 : -1;
-  });
-
-  return verifiedOrders;
-};
+console.log('Fetching token ids...');
 
 // ** Main Function ** //
 async function main() {
   // ** Configure ** //
   const {
     provider,
-    YobotERC721LimitOrderContract,
-    YobotERC721LimitOrderInterface,
     EOA_ADDRESS,
     MINTING_CONTRACT,
   } = configure();
@@ -62,7 +39,7 @@ async function main() {
   console.log('Decimal Balance:', parseInt(balance.toString(), 10));
 
   // ** Get all ERC721 Contract Events ** //
-  const allEvents = await fetchAllERC721LimitOrderEvents(
+  const allEvents = await fetchMintingEvents(
     ERC721LimitOrderContract,
     filterStartBlock,
     provider,
