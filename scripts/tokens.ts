@@ -49,28 +49,8 @@ async function main() {
     EOA_ADDRESS,
   );
 
-  console.log('Minting events:', mintingEvents);
-
-  // // ** Get a Set of Token Addresses ** //
-  // const tokenAddresses = Array.from(new Set(allEvents.map((
-  //   event,
-  // ) => event.args._tokenAddress.toString())));
-  // const orders = new Map();
-
-  // // ** For each Token Address ** //
-  // tokenAddresses.map((tokenAddress) => {
-  //   // ** Get all ERC721LimitOrder events for that Token Address ** //
-  //   const eventsForTokenAddress = filterEvents(tokenAddress, allEvents);
-
-  //   // ** Get the latest orders given those events ** //
-  //   const latestOrders = fetchLatestOrders(eventsForTokenAddress, tokenAddress);
-
-  //   // ** Sort the orders by price offered ** //
-  //   const sortedOrders = latestOrders.sort((a, b) => a.priceInWeiEach.gt(b.priceInWeiEach));
-  //   orders.set(tokenAddress, sortedOrders);
-
-  //   return '';
-  // });
+  const tokens = mintingEvents.map((e: any) => e.id);
+  console.log('Wallet has tokens:', tokens);
 }
 
 main();
