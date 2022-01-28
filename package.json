@@ -22,7 +22,8 @@
     "scripts:orders": "npx ts-node scripts/orders.ts",
     "scripts:run": "npx ts-node scripts/run.ts",
     "scripts:simulate": "npx ts-node scripts/simulate.ts",
-    "scripts:balance": "npx ts-node scripts/balance.ts"
+    "scripts:balance": "npx ts-node scripts/balance.ts",
+    "scripts:fill": "npx ts-node scripts/fill.ts"
   },
   "license": "Unlicense",
   "dependencies": {
