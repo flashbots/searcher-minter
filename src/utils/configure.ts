@@ -20,6 +20,9 @@ const configure = () => {
     process.exit(1);
   }
 
+  // ** Wallet Public Key ** //
+  const { EOA_ADDRESS } = process.env;
+
   // ** Optionally Specify the Minting ABI ** //
   const { MINTING_ABI } = process.env;
 
@@ -87,6 +90,7 @@ const configure = () => {
   return {
     provider,
     wallet,
+    EOA_ADDRESS,
     CHAIN_ID,
     ETHER,
     GWEI,
