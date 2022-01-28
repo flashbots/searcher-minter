@@ -1,7 +1,7 @@
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-console */
 
-import { BigNumber } from 'ethers';
+// import { BigNumber } from 'ethers';
 import {
   callBalance,
   configure,
@@ -38,34 +38,39 @@ async function main() {
   console.log('BigNumber Balance:', balance);
   console.log('Decimal Balance:', parseInt(balance.toString(), 10));
 
+  console.log('Fetching ERC721 events');
+  console.log('Using EOA Address:', EOA_ADDRESS);
+
   // ** Get all ERC721 Contract Events ** //
-  const allEvents = await fetchMintingEvents(
-    ERC721LimitOrderContract,
-    filterStartBlock,
+  const mintingEvents = await fetchMintingEvents(
+    MINTING_CONTRACT,
+    0, // filterStartBlock
     provider,
-    ERC721LimitOrderInterface,
+    EOA_ADDRESS,
   );
 
-  // ** Get a Set of Token Addresses ** //
-  const tokenAddresses = Array.from(new Set(allEvents.map((
-    event,
-  ) => event.args._tokenAddress.toString())));
-  const orders = new Map();
+  console.log('Minting events:', mintingEvents);
 
-  // ** For each Token Address ** //
-  tokenAddresses.map((tokenAddress) => {
-    // ** Get all ERC721LimitOrder events for that Token Address ** //
-    const eventsForTokenAddress = filterEvents(tokenAddress, allEvents);
+  // // ** Get a Set of Token Addresses ** //
+  // const tokenAddresses = Array.from(new Set(allEvents.map((
+  //   event,
+  // ) => event.args._tokenAddress.toString())));
+  // const orders = new Map();
 
-    // ** Get the latest orders given those events ** //
-    const latestOrders = fetchLatestOrders(eventsForTokenAddress, tokenAddress);
+  // // ** For each Token Address ** //
+  // tokenAddresses.map((tokenAddress) => {
+  //   // ** Get all ERC721LimitOrder events for that Token Address ** //
+  //   const eventsForTokenAddress = filterEvents(tokenAddress, allEvents);
 
-    // ** Sort the orders by price offered ** //
-    const sortedOrders = latestOrders.sort((a, b) => a.priceInWeiEach.gt(b.priceInWeiEach));
-    orders.set(tokenAddress, sortedOrders);
+  //   // ** Get the latest orders given those events ** //
+  //   const latestOrders = fetchLatestOrders(eventsForTokenAddress, tokenAddress);
 
-    return '';
-  });
+  //   // ** Sort the orders by price offered ** //
+  //   const sortedOrders = latestOrders.sort((a, b) => a.priceInWeiEach.gt(b.priceInWeiEach));
+  //   orders.set(tokenAddress, sortedOrders);
+
+  //   return '';
+  // });
 }
 
 main();
