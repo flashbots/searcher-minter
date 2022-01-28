@@ -3,6 +3,7 @@ export { default as configure } from './configure';
 export { default as getDeployedContract } from './DeployedContracts';
 export { default as generateRandomUint256 } from './RandomUint256';
 export { default as saveJson } from './SaveJson';
+export { default as readJson } from './ReadJson';
 
 // CONTRACT INTERACTION
 export * from './CallBalance';

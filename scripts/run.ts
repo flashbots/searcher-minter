@@ -18,13 +18,16 @@ import {
   craftBundle,
 } from '../src/flashbots';
 import {
-  configure, extractMaxSupplies, extractMintPrice, extractTotalSupplies,
+  callBalance,
+  configure, extractMaxSupplies, extractMintPrice, extractTotalSupplies, readJson, saveJson,
 } from '../src/utils';
 
 const readline = require('readline');
 const { Worker } = require('worker_threads');
 
 require('dotenv').config();
+
+const MINTED_ORDERS_FILE = './inventory/minted.json';
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 // !!                                 !! //
@@ -84,10 +87,11 @@ const enterCommand = (url: string, rl: any) => {
 (async () => {
   // ** Get Configuration ** //
   const {
-    CHAIN_ID: chainId,
     provider,
     flashbotsEndpoint,
     wallet,
+    EOA_ADDRESS,
+    CHAIN_ID: chainId,
     BLOCKS_TILL_INCLUSION: blocksUntilInclusion,
     LEGACY_GAS_PRICE: legacyGasPrice,
     PRIORITY_FEE: priorityFee,
@@ -113,6 +117,9 @@ const enterCommand = (url: string, rl: any) => {
   let knownMintPriceAbi: string; // the abi to get the mint price
   let knownTotalSupplyAbi: string; // the abi to get the total supply
   let knownMaxSupplyAbi: string; // the abi to get the max supply
+
+  // ** Read stashed mintedOrders ** //
+  mintedOrders = readJson(MINTED_ORDERS_FILE);
 
   // TODO: Check if abi function signatures are defined by environment variables!
 
@@ -145,7 +152,12 @@ const enterCommand = (url: string, rl: any) => {
       mintingLocked = true;
       console.log('Minting not locked, proceeding to mint...');
 
-      // ** Check how many we minted and filter those out of verified orders ** //
+      // ** ///////////////////////////////////////// ** //
+      // **                                           ** //
+      // **           Filter Mintable Bids            ** //
+      // **                                           ** //
+      // ** ///////////////////////////////////////// ** //
+
       // ** starting with most expensive bid ** //
       // ** NOTE: `sort` operates _in-place_, so we don't need reassignement ** //
       verifiedOrders.sort((a, b) => {
@@ -177,6 +189,12 @@ const enterCommand = (url: string, rl: any) => {
       });
       console.log('Got filtered orders:', filteredOrders);
 
+      // ** ///////////////////////////////////////// ** //
+      // **                                           ** //
+      // **   Determine how many searcher can mint    ** //
+      // **                                           ** //
+      // ** ///////////////////////////////////////// ** //
+
       // ** Now, we have a list of profitable orders we want to mint for ** //
       // ** Check how many we can mint (MAX_SUPPLY - totalSupply) ** //
       const {
@@ -204,8 +222,24 @@ const enterCommand = (url: string, rl: any) => {
       const remainingSupply = maxSupply.sub(totalSupply);
       console.log('Remaining supply:', remainingSupply);
 
-      // ** Check enough left to mint from the total supply ** //
-      const remainingOrders = filteredOrders.slice(0, remainingSupply.toNumber());
+      // ** Fetch the Balance of the searcher ** //
+      const balance = await callBalance(
+        infiniteMint,
+        EOA_ADDRESS,
+        provider,
+      );
+      let balanceInt: number = 0;
+      try {
+        balanceInt = balance.toNumber();
+      } catch (e) {
+        // !! IGNORE !! //
+      }
+
+      // ** Inventory is the max of our mintedOrders or the searcher's balance ** //
+      const inventory = Math.max(mintedOrders.length, balanceInt);
+
+      // ** Check enough left to mint from the total supply minus how many we minted** //
+      const remainingOrders = filteredOrders.slice(inventory).slice(0, remainingSupply.toNumber());
 
       // ** Try to get the total supply as a number ** //
       let totalSupplyNum: number = 0;
@@ -218,6 +252,12 @@ const enterCommand = (url: string, rl: any) => {
           console.log('Failed to impute the total supply as a number :((');
         }
       }
+
+      // ** ///////////////////////////////////////// ** //
+      // **                                           ** //
+      // **            CRAFT TRANSACTIONS             ** //
+      // **                                           ** //
+      // ** ///////////////////////////////////////// ** //
 
       // ** Map Orders to transactions ** //
       const transactions: any[] = [];
@@ -260,6 +300,12 @@ const enterCommand = (url: string, rl: any) => {
         return;
       }
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
+
+      // ** ///////////////////////////////////////// ** //
+      // **                                           ** //
+      // **                CRAFT BUNDLE               ** //
+      // **                                           ** //
+      // ** ///////////////////////////////////////// ** //
 
       // ** Craft a signed bundle of transactions ** //
       const {
@@ -352,6 +398,9 @@ const enterCommand = (url: string, rl: any) => {
 
       // ** Record Minted Transactions ** //
       mintedOrders = [...mintedOrders, ...remainingOrders];
+
+      // ** Save minted orders to a json file incase our searcher crashes ** //
+      saveJson(mintedOrders, MINTED_ORDERS_FILE);
 
       // ** Release the Minting Lock ** //
       mintingLocked = false;
