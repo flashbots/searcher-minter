@@ -4,6 +4,7 @@
 
 import { BigNumber } from 'ethers';
 import {
+  approveERC721,
   callBalance,
   callOrders,
   compareOrderEvents,
@@ -47,6 +48,8 @@ async function main() {
   // ** Configure ** //
   const {
     provider,
+    wallet,
+    YobotERC721LimitOrderContractAddress,
     YobotERC721LimitOrderContract,
     YobotERC721LimitOrderInterface,
     EOA_ADDRESS,
@@ -123,6 +126,16 @@ async function main() {
   const tokens = mintingEvents.map((e: any) => e.id);
   console.log('Wallet has tokens:', tokens);
 
+  // ** Approve the Yobot Contract to transfer our tokens ** //
+  // ** Only if it isn't already approved ** //
+  // TODO: get if approved operator
+  const approvalRes = await approveERC721(
+    MINTING_CONTRACT,
+    YobotERC721LimitOrderContractAddress,
+    wallet,
+  );
+  console.log('Approval Result:', approvalRes);
+
   // ** Fill The Orders ** //
   let tokenIdNum = 0;
   for (const order of sortedOrders) {
@@ -132,11 +145,12 @@ async function main() {
     console.log('Order ID:', order.orderId.toNumber());
     console.log('TokenId:', tokens[tokenIdNum]);
     console.log('Expected Price in wei each:', parseInt(order.priceInWeiEach, 10));
+    console.log('Profit to:', EOA_ADDRESS);
     console.log('Send Now: true');
 
     await fillOrder(
       YobotERC721LimitOrderContract,
-      order.orderId.toNumber(), // orderId
+      order.orderId, // orderId
       tokens[tokenIdNum], // tokenId
       order.priceInWeiEach, // Expected price in wei each
       EOA_ADDRESS, // profitTo
