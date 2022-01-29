@@ -51,8 +51,8 @@ parentPort.on('message', async (data: any) => {
                 user: order.user,
                 priceInWeiEach: contractOrderPrice,
                 quantity: contractOrderQuantity,
-                orderId: order.orderId,
-                orderNum: order.orderNum,
+                orderId: order.orderId.toString(),
+                orderNum: order.orderNum.toString(),
               };
               verifiedOrders.push(verifiedOrder);
             }

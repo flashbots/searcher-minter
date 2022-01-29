@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 /* eslint-disable no-console */
 
@@ -7,6 +8,7 @@ import {
   callOrders,
   compareOrderEvents,
   configure,
+  fetchMintingEvents,
   fetchSortedOrders,
   fillOrder,
 } from '../src/utils';
@@ -110,20 +112,38 @@ async function main() {
   // ** Sort the orders in a separate function ** //
   const sortedOrders = sortOrders(verifiedOrders);
 
+  // ** Get all ERC721 Contract Events ** //
+  const mintingEvents = await fetchMintingEvents(
+    MINTING_CONTRACT,
+    0, // filterStartBlock
+    provider,
+    EOA_ADDRESS,
+  );
+
+  const tokens = mintingEvents.map((e: any) => e.id);
+  console.log('Wallet has tokens:', tokens);
+
   // ** Fill The Orders ** //
+  let tokenIdNum = 0;
   for (const order of sortedOrders) {
     console.log('Filling order with id:', order.orderId.toNumber());
 
-    // TODO: get all searcher token ids
+    console.log('Args:');
+    console.log('Order ID:', order.orderId.toNumber());
+    console.log('TokenId:', tokens[tokenIdNum]);
+    console.log('Expected Price in wei each:', parseInt(order.priceInWeiEach, 10));
+    console.log('Send Now: true');
 
-    fillOrder(
+    await fillOrder(
       YobotERC721LimitOrderContract,
       order.orderId.toNumber(), // orderId
-      order.orderId.toNumber(), // tokenId
-      parseInt(order.expectedPriceInWeiEach, 10), // Expected price in wei each
+      tokens[tokenIdNum], // tokenId
+      order.priceInWeiEach, // Expected price in wei each
       EOA_ADDRESS, // profitTo
       true, // send now
     );
+
+    tokenIdNum += 1;
   }
 }
 

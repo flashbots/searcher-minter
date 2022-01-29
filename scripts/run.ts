@@ -19,7 +19,7 @@ import {
 } from '../src/flashbots';
 import {
   callBalance,
-  configure, extractMaxSupplies, extractMintPrice, extractTotalSupplies, readJson, saveJson,
+  configure, extractMaxSupplies, extractMintPrice, extractTotalSupplies, fetchMintingEvents, fillOrder, readJson, saveJson,
 } from '../src/utils';
 
 const readline = require('readline');
@@ -52,16 +52,15 @@ const params = (content: string) => {
 };
 
 // ** Helper function to send discord notification ** //
-const postDiscord = (url: string, body: string) => {
-  fetch(url, {
+const postDiscord = async (url: string, body: string) => {
+  const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-type': 'application/json',
     },
     body,
-  }).then((res: any) => {
-    console.log('Sent Discord Notification:', body);
   });
+  console.log('Sent Discord Notification:', body);
 };
 
 // ** CLI Helper ** //
@@ -95,6 +94,7 @@ const enterCommand = (url: string, rl: any) => {
     BLOCKS_TILL_INCLUSION: blocksUntilInclusion,
     LEGACY_GAS_PRICE: legacyGasPrice,
     PRIORITY_FEE: priorityFee,
+    YobotERC721LimitOrderContract,
     YobotInfiniteMintInterface: yobotInfiniteMintInterface,
     MINTING_CONTRACT: infiniteMint,
     DISCORD_WEBHOOK_URL: discordWebhookUrl,
@@ -123,6 +123,60 @@ const enterCommand = (url: string, rl: any) => {
 
   // TODO: Check if abi function signatures are defined by environment variables!
 
+  const fillOrders = async (remainingOrders: any[]) => {
+    // ** Record Minted Transactions ** //
+    mintedOrders = [...mintedOrders, ...remainingOrders];
+
+    // ** Get all the  ** //
+    const mintingEvents = await fetchMintingEvents(
+      infiniteMint,
+      0, // filterStartBlock
+      provider,
+      EOA_ADDRESS,
+    );
+
+    const tokens = mintingEvents.map((e: any) => e.id);
+    console.log('Wallet has tokens:', tokens);
+
+    // ** Return orders we couldn't fill ** //
+    const nonFilledOrders = [];
+
+    // ** Try to fill orders with the given token ids ** //
+    let tokenIdNum = 0;
+    for (const order of mintedOrders) {
+      if (tokenIdNum >= tokens.length) {
+        nonFilledOrders.push(order);
+      } else {
+        console.log('Attempting to fill order:', order);
+        await postDiscord(
+          discordWebhookUrl,
+          params(`⌛ FILLING ORDER ${order.orderId} ⌛`),
+        );
+        const fillRes = await fillOrder(
+          YobotERC721LimitOrderContract,
+          order.orderId,
+          tokens[tokenIdNum],
+          order.priceInWeiEach,
+          EOA_ADDRESS,
+          true, // we want the profit immediately to continue minting
+        );
+
+        // TODO: if the fillOrder response is bad, we add order back to nonFilledOrders
+        console.log('Got fill result:', fillRes);
+        await postDiscord(
+          discordWebhookUrl,
+          params(`✅ ORDER ${order.orderId} FILLED ✅`),
+        );
+      }
+      tokenIdNum += 1;
+    }
+
+    // ** Save minted orders to a json file incase our searcher crashes ** //
+    saveJson(nonFilledOrders, MINTED_ORDERS_FILE);
+
+    return nonFilledOrders;
+  };
+
   // ** ///////////////////////////////////////// ** //
   // ** ///////////////////////////////////////// ** //
   // **                                           ** //
@@ -145,7 +199,7 @@ const enterCommand = (url: string, rl: any) => {
       console.log(`   ├─ Timestamp: ${result.timestamp}`);
       console.log(`   └─ Network: ${result.network}`);
       console.log('-----------------------------------------');
-      postDiscord(discordWebhookUrl, params(`📦 [${transactionCount}] MEMPOOL TRANSACTION DETECTED [${result.direction.toUpperCase()}] 📦`));
+      await postDiscord(discordWebhookUrl, params(`📦 [${transactionCount}] MEMPOOL TRANSACTION DETECTED [${result.direction.toUpperCase()}] 📦`));
     }
 
     if (!mintingLocked) {
@@ -239,6 +293,7 @@ const enterCommand = (url: string, rl: any) => {
       const inventory = Math.max(mintedOrders.length, balanceInt);
 
       // ** Check enough left to mint from the total supply minus how many we minted** //
+      const fillableOrders = filteredOrders.slice(0, remainingSupply.toNumber());
       const remainingOrders = filteredOrders.slice(inventory).slice(0, remainingSupply.toNumber());
 
       // ** Try to get the total supply as a number ** //
@@ -295,6 +350,11 @@ const enterCommand = (url: string, rl: any) => {
       if (transactions.length <= 0) {
         // TODO: alert a public discord channel if orders don't have enough wei
 
+        // ** We still want to try to fill orders if we have an inventory ** //
+        if (inventory > 0) {
+          mintedOrders = await fillOrders(fillableOrders);
+        }
+
         // ** Release the Minting Lock ** //
         mintingLocked = false;
         return;
@@ -334,11 +394,11 @@ const enterCommand = (url: string, rl: any) => {
 
       // ** Send Bundle to Flashbots ** //
       if (validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
-        postDiscord(
+        await postDiscord(
           discordWebhookUrl,
           params('✅ SIMULATION SUCCESSFUL ✅'),
         );
-        postDiscord(
+        await postDiscord(
           discordWebhookUrl,
           params(`💨 SENDING FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${transactions.length}`),
         );
@@ -352,7 +412,7 @@ const enterCommand = (url: string, rl: any) => {
         const didBundleError = validateSubmitResponse(bundleRes);
         console.error(`Did bundle submission error: ${didBundleError}`);
 
-        postDiscord(
+        await postDiscord(
           discordWebhookUrl,
           params(`🚀 BUNDLE SENT - ${JSON.stringify(bundleRes)}`),
         );
@@ -363,7 +423,7 @@ const enterCommand = (url: string, rl: any) => {
         const awaiting = await (bundleRes as FlashbotsTransactionResponse).wait();
         console.log('Awaited response:', JSON.stringify(awaiting));
 
-        postDiscord(
+        await postDiscord(
           discordWebhookUrl,
           params(`🎉 AWAITED BUNDLE RESPONSE - ${JSON.stringify(simulatedBundleRes)}`),
         );
@@ -378,35 +438,30 @@ const enterCommand = (url: string, rl: any) => {
           const searcherStats = await fbp.getUserStats();
           console.log('User stats:', JSON.stringify(searcherStats));
 
-          postDiscord(
+          await postDiscord(
             discordWebhookUrl,
             params(`👑 SEARCHER STATS: ${JSON.stringify(searcherStats)}`),
           );
         }
 
-        // ** Wait for the tx to be mined ** //
-        // // @ts-ignore
-        // const waitResponse = await bundleRes.wait();
-        // console.log('Awaited response:', JSON.stringify(waitResponse));
+        // TODO: add the gas price to the remainingOrders
+        // TODO: so that when we fill order, we only fill what's profitable
+        const gasOrders = fillableOrders;
+
+        mintedOrders = await fillOrders(gasOrders);
       } else {
         console.log('Simulation failed, discarding bundle...');
-        postDiscord(
+        await postDiscord(
           discordWebhookUrl,
           params('❌ SIMULATION FAILED - DISCARDING BUNDLE ❌'),
         );
       }
 
-      // ** Record Minted Transactions ** //
-      mintedOrders = [...mintedOrders, ...remainingOrders];
-
-      // ** Save minted orders to a json file incase our searcher crashes ** //
-      saveJson(mintedOrders, MINTED_ORDERS_FILE);
-
       // ** Release the Minting Lock ** //
       mintingLocked = false;
     } else {
       console.log('Minting locked');
-      postDiscord(
+      await postDiscord(
         discordWebhookUrl,
         params('🔒 MINTING LOCKED 🔒'),
       );
@@ -426,16 +481,16 @@ const enterCommand = (url: string, rl: any) => {
 
   mempoolWorker.on('message', mintHandler);
 
-  mempoolWorker.on('error', (error: any) => {
+  mempoolWorker.on('error', async (error: any) => {
     console.error('Mempool Worker Errored!');
     console.error(error);
-    postDiscord(discordWebhookUrl, params('Mempool Worker Errored!'));
+    await postDiscord(discordWebhookUrl, params('Mempool Worker Errored!'));
   });
 
-  mempoolWorker.on('exit', (exitCode: any) => {
+  mempoolWorker.on('exit', async (exitCode: any) => {
     console.warn('Mempool Worker Exited!');
     console.warn(exitCode);
-    postDiscord(discordWebhookUrl, params('Mempool Worker Exited!'));
+    await postDiscord(discordWebhookUrl, params('Mempool Worker Exited!'));
   });
 
   // ** Create the Yobot Orders Listner Worker ** //
@@ -448,16 +503,16 @@ const enterCommand = (url: string, rl: any) => {
     console.log(`  [${orderUpdateCount}] Order Update - ${result.orders.length} open orders on block ${result.blockNumber}`);
   });
 
-  ordersWorker.on('error', (error: any) => {
+  ordersWorker.on('error', async (error: any) => {
     console.error('Orders Worker Errored!');
     console.error(error);
-    postDiscord(discordWebhookUrl, params('Orders Worker Errored!'));
+    await postDiscord(discordWebhookUrl, params('Orders Worker Errored!'));
   });
 
-  ordersWorker.on('exit', (exitCode: any) => {
+  ordersWorker.on('exit', async (exitCode: any) => {
     console.warn('Orders Worker Exited!');
     console.warn(exitCode);
-    postDiscord(discordWebhookUrl, params('Orders Worker Exited!'));
+    await postDiscord(discordWebhookUrl, params('Orders Worker Exited!'));
   });
 
   // ** Create the Interval Actor ** //
@@ -468,16 +523,16 @@ const enterCommand = (url: string, rl: any) => {
     await mintHandler(trigger);
   });
 
-  intervalWorker.on('error', (error: any) => {
+  intervalWorker.on('error', async (error: any) => {
     console.error('Interval Worker Errored!');
     console.error(error);
-    postDiscord(discordWebhookUrl, params('Interval Worker Errored!'));
+    await postDiscord(discordWebhookUrl, params('Interval Worker Errored!'));
   });
 
-  intervalWorker.on('exit', (exitCode: any) => {
+  intervalWorker.on('exit', async (exitCode: any) => {
     console.warn('Interval Worker Exited!');
     console.warn(exitCode);
-    postDiscord(discordWebhookUrl, params('Interval Worker Exited!'));
+    await postDiscord(discordWebhookUrl, params('Interval Worker Exited!'));
   });
 
   // ** Start Workers ** //
