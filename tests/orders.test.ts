@@ -39,10 +39,10 @@ describe('fetches orders', () => {
     // ** Iterate mapping ** //
     const eventArray: any = [];
     events.forEach((orders, token) => eventArray.push({ token, orders }));
-    const awaitedQueries = eventArray.map(async ({ token, orders }: any) => {
+    const awaitedQueries = eventArray.map(({ token, orders }: any) => {
       // let { token, orders } = obj;
       // ** Iterate orders ** //
-      const orderQueries = orders.map(async (order: any) => {
+      const orderQueries = orders.map((order: any) => {
         // ** Fetch all user's orders and verify they exist ** //
         return callOrders(YobotERC721LimitOrderContract, order.user).then((fetchedOrders) => {
           // ** Loop over all the user's open orders to make sure it exists ** //

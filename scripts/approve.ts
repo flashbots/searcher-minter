@@ -10,13 +10,6 @@ import {
 
 require('dotenv').config();
 
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
-// !!                                 !! //
-// !!   THIS FILLS ALL ORDERS         !! //
-// !!   REGARDLESS OF PROFITABILITY   !! //
-// !!                                 !! //
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
-
 console.log('Approving the ERC721 Contract...');
 
 // ** Main Function ** //

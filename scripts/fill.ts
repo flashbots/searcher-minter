@@ -12,6 +12,7 @@ import {
   fetchMintingEvents,
   fetchSortedOrders,
   fillOrder,
+  isApproved,
 } from '../src/utils';
 
 require('dotenv').config();
@@ -128,13 +129,22 @@ async function main() {
 
   // ** Approve the Yobot Contract to transfer our tokens ** //
   // ** Only if it isn't already approved ** //
-  // TODO: get if approved operator
-  const approvalRes = await approveERC721(
+  const approved = await isApproved(
     MINTING_CONTRACT,
+    EOA_ADDRESS,
     YobotERC721LimitOrderContractAddress,
-    wallet,
+    provider,
   );
-  console.log('Approval Result:', approvalRes);
+  console.log(`Is Yobot already approved for eoa ${EOA_ADDRESS}: ${approved}`);
+  if (!approved) {
+    console.log('Not approved, proceeding to approve for all...');
+    const approvalRes = await approveERC721(
+      MINTING_CONTRACT,
+      YobotERC721LimitOrderContractAddress,
+      wallet,
+    );
+    console.log('Approval Result:', approvalRes);
+  }
 
   // ** Fill The Orders ** //
   let tokenIdNum = 0;

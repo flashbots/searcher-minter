@@ -85,7 +85,7 @@ const configure = () => {
   const GWEI = BigNumber.from(10).pow(9);
   const PRIORITY_FEE = GWEI.mul(3);
   const LEGACY_GAS_PRICE = GWEI.mul(12);
-  const BLOCKS_TILL_INCLUSION = 3;
+  const BLOCKS_TILL_INCLUSION = 2;
 
   return {
     provider,
