@@ -167,7 +167,7 @@ async function main() {
     // const waitResponse = await bundleRes.wait();
     // console.log('Awaited response:', JSON.stringify(waitResponse));
   } else {
-    console.error(`Simulation errored: ${didSimulationError}`);
+    console.error(`Is simulation valid: ${validSimulation}`);
   }
 }
 

@@ -21,7 +21,11 @@
     "scripts:mint": "npx ts-node scripts/mint.ts",
     "scripts:orders": "npx ts-node scripts/orders.ts",
     "scripts:run": "npx ts-node scripts/run.ts",
-    "scripts:simulate": "npx ts-node scripts/simulate.ts"
+    "scripts:simulate": "npx ts-node scripts/simulate.ts",
+    "scripts:balance": "npx ts-node scripts/balance.ts",
+    "scripts:fill": "npx ts-node scripts/fill.ts",
+    "scripts:tokens": "npx ts-node scripts/tokens.ts",
+    "scripts:approve": "npx ts-node scripts/approve.ts"
   },
   "license": "Unlicense",
   "dependencies": {

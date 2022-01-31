@@ -20,6 +20,9 @@ const configure = () => {
     process.exit(1);
   }
 
+  // ** Wallet Public Key ** //
+  const { EOA_ADDRESS } = process.env;
+
   // ** Optionally Specify the Minting ABI ** //
   const { MINTING_ABI } = process.env;
 
@@ -74,7 +77,7 @@ const configure = () => {
   })();
 
   // ** Instantiate Contracts ** //
-  const YobotERC721LimitOrderContract = new ethers.Contract(YobotERC721LimitOrderContractAddress, YobotERC721LimitOrderAbi, provider);
+  const YobotERC721LimitOrderContract = new ethers.Contract(YobotERC721LimitOrderContractAddress, YobotERC721LimitOrderAbi, wallet);
   // const YobotArtBlocksBrokerContract = new ethers.Contract(getDeployedContract(CHAIN_ID).YobotArtBlocksBroker, YobotArtBlocksBrokerAbi, provider);
 
   // ** Define Lindy Constants ** //
@@ -82,11 +85,12 @@ const configure = () => {
   const GWEI = BigNumber.from(10).pow(9);
   const PRIORITY_FEE = GWEI.mul(3);
   const LEGACY_GAS_PRICE = GWEI.mul(12);
-  const BLOCKS_TILL_INCLUSION = 3;
+  const BLOCKS_TILL_INCLUSION = 2;
 
   return {
     provider,
     wallet,
+    EOA_ADDRESS,
     CHAIN_ID,
     ETHER,
     GWEI,
