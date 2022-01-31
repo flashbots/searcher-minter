@@ -7,7 +7,7 @@ import { Contract, providers, Signer } from 'ethers';
 import { hexZeroPad, id } from 'ethers/lib/utils';
 
 // ** CONSTANTS ** //
-const SET_APPROVAL_FOR_ALL = ['function setApprovalForAll(address operator, bool approved) public virtual'];
+const SET_APPROVAL_FOR_ALL = ['function setApprovalForAll(address operator, bool approved) public'];
 
 const approveERC721 = async (
   MintingContractAddress: string,

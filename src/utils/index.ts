@@ -12,6 +12,7 @@ export { default as extractMintPrice } from './ExtractMintPrice';
 export * from './ExtractSupply';
 export * from './FillOrder';
 export { default as approveERC721 } from './ApproveERC721';
+export { default as isApproved } from './Approved';
 
 // EVENTS
 export { default as fetchAllERC721LimitOrderEvents } from './FetchAllERC721LimitOrderEvents';
