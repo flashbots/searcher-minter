@@ -77,6 +77,8 @@ async function main() {
     YobotERC721LimitOrderInterface,
   );
 
+  console.log('Fetched sorted orders:', events);
+
   // ** Iterate mapping ** //
   const eventArray: any = [];
   events.forEach((orderList, token) => eventArray.push({ token, orderList }));
@@ -158,14 +160,18 @@ async function main() {
     console.log('Profit to:', EOA_ADDRESS);
     console.log('Send Now: true');
 
-    await fillOrder(
-      YobotERC721LimitOrderContract,
-      order.orderId, // orderId
-      tokens[tokenIdNum], // tokenId
-      order.priceInWeiEach, // Expected price in wei each
-      EOA_ADDRESS, // profitTo
-      true, // send now
-    );
+    try {
+      await fillOrder(
+        YobotERC721LimitOrderContract,
+        order.orderId, // orderId
+        tokens[tokenIdNum], // tokenId
+        order.priceInWeiEach, // Expected price in wei each
+        EOA_ADDRESS, // profitTo
+        true, // send now
+      );
+    } catch (e) {
+      console.log('Failed to fill order with error:', e);
+    }
 
     tokenIdNum += 1;
   }

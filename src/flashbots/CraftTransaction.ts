@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 import { FlashbotsBundleProvider, FlashbotsBundleRawTransaction, FlashbotsBundleTransaction } from '@flashbots/ethers-provider-bundle';
-import { Web3Provider, InfuraProvider } from '@ethersproject/providers';
+import { Web3Provider, InfuraProvider, AlchemyProvider } from '@ethersproject/providers';
 import { BigNumber, Wallet } from 'ethers';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { TransactionRequest } from '@ethersproject/abstract-provider';
 
 const craftTransaction = async (
-  provider: Web3Provider | InfuraProvider,
+  provider: Web3Provider | InfuraProvider | AlchemyProvider,
   wallet: Wallet,
   chainId: number,
   blocks_until_inclusion: number,
@@ -51,7 +51,7 @@ const craftTransaction = async (
       type: 2,
       maxFeePerGas: priority_fee.add(maxBaseFeeInFutureBlock),
       maxPriorityFeePerGas: priority_fee,
-      gasLimit: gasLimit.gt(0) ? gasLimit : block.gasLimit,
+      gasLimit: gasLimit.gt(0) ? gasLimit : block.gasLimit.sub(block.gasLimit.div(20)),
       data,
       chainId,
       value,

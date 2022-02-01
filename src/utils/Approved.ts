@@ -1,4 +1,4 @@
-import { InfuraProvider } from '@ethersproject/providers';
+import { AlchemyProvider, InfuraProvider } from '@ethersproject/providers';
 import { Contract } from 'ethers';
 
 // ** CONSTANTS ** //
@@ -8,7 +8,7 @@ const isApproved = async (
   MintingContractAddress: string,
   owner: string,
   operator: string,
-  wallet: InfuraProvider,
+  wallet: InfuraProvider | AlchemyProvider,
 ) => {
   // ** Create the contract using out abi ** //
   const MintingContract = new Contract(MintingContractAddress, IS_APPROVED_FOR_ALL, wallet);

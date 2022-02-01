@@ -3,7 +3,7 @@
 /* eslint-disable no-console */
 /* eslint-disable consistent-return */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { InfuraProvider, Web3Provider } from '@ethersproject/providers';
+import { AlchemyProvider, InfuraProvider, Web3Provider } from '@ethersproject/providers';
 import {
   callOrders,
   configure,
@@ -13,7 +13,7 @@ import {
 
 require('bignumber.js');
 
-let provider: InfuraProvider;
+let provider: InfuraProvider | AlchemyProvider;
 let YobotERC721LimitOrderContract: any;
 let YobotERC721LimitOrderInterface: any;
 

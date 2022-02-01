@@ -1,6 +1,10 @@
+import { AlchemyProvider } from '@ethersproject/providers';
 import { providers } from 'ethers';
 
-const getTimeByBlock = async (txHash: string, provider: providers.InfuraProvider) => {
+const getTimeByBlock = async (
+  txHash: string,
+  provider: providers.InfuraProvider | AlchemyProvider,
+) => {
   const blockN = await provider.getTransaction(txHash);
   const blockData = await provider.getBlock(blockN.blockNumber);
 
@@ -10,7 +14,7 @@ const getTimeByBlock = async (txHash: string, provider: providers.InfuraProvider
 const fetchAllERC721LimitOrderEvents = async (
   ERC721LimitOrderContract: any,
   filterStartBlock: number,
-  provider: providers.InfuraProvider,
+  provider: providers.InfuraProvider | AlchemyProvider,
   ERC721LimitOrderInterface: any,
 ) => {
   // get all events from the ERC721LimitOrder contract

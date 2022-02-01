@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/naming-convention */
-import { InfuraProvider } from '@ethersproject/providers';
+import { AlchemyProvider, InfuraProvider } from '@ethersproject/providers';
 import { FlashbotsBundleProvider } from '@flashbots/ethers-provider-bundle';
 import { BigNumber, ethers, Wallet } from 'ethers';
 import { Interface } from 'ethers/lib/utils';
@@ -16,7 +16,7 @@ import {
 } from '../src/flashbots';
 import { configure } from '../src/utils';
 
-let provider: InfuraProvider;
+let provider: InfuraProvider | AlchemyProvider;
 let flashbots_endpoint: string;
 let wallet: Wallet;
 let flashbotsProvider: FlashbotsBundleProvider;

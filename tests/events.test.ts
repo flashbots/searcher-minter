@@ -1,11 +1,11 @@
-import { InfuraProvider } from '@ethersproject/providers';
+import { AlchemyProvider, InfuraProvider } from '@ethersproject/providers';
 import {
   configure,
   fetchAllERC721LimitOrderEvents,
   fetchSortedOrders,
 } from '../src/utils';
 
-let provider: InfuraProvider;
+let provider: InfuraProvider | AlchemyProvider;
 let YobotERC721LimitOrderContract: any;
 let YobotERC721LimitOrderInterface: any;
 

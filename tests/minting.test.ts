@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable consistent-return */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { InfuraProvider, Web3Provider } from '@ethersproject/providers';
+import { AlchemyProvider, InfuraProvider, Web3Provider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
 import {
   callOrders,
@@ -16,7 +16,7 @@ import {
 require('bignumber.js');
 
 // ** General Config Variables ** //
-let provider: InfuraProvider;
+let provider: InfuraProvider | AlchemyProvider;
 let YobotERC721LimitOrderContract: any;
 let YobotERC721LimitOrderInterface: any;
 let MINTING_CONTRACT: string;

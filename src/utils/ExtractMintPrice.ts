@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
-import { InfuraProvider } from '@ethersproject/providers';
+import { AlchemyProvider, InfuraProvider } from '@ethersproject/providers';
 import { BigNumber, Contract } from 'ethers';
 
 const potentialAbis = [
@@ -18,7 +18,7 @@ const potentialAbis = [
 
 const extractMintPrice = async (
   address: string,
-  provider: InfuraProvider,
+  provider: InfuraProvider | AlchemyProvider,
   knownAbi?: string,
 ) => {
   let success = false;

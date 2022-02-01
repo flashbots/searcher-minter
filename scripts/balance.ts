@@ -3,6 +3,7 @@
 import {
   callBalance,
   configure,
+  fetchMintingEvents,
 } from '../src/utils';
 
 require('dotenv').config();
@@ -27,6 +28,17 @@ async function main() {
 
   console.log('BigNumber Balance:', balance);
   console.log('Decimal Balance:', parseInt(balance.toString(), 10));
+
+  // ** Get all ERC721 Contract Events ** //
+  const mintingEvents = await fetchMintingEvents(
+    MINTING_CONTRACT,
+    0, // filterStartBlock
+    provider,
+    EOA_ADDRESS,
+  );
+
+  const tokens = mintingEvents.map((e: any) => e.id);
+  console.log('Wallet has tokens:', tokens);
 }
 
 main();

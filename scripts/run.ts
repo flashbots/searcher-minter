@@ -6,7 +6,7 @@
 /* eslint-disable no-console */
 import fetch from 'cross-fetch';
 import { BigNumber, ethers } from 'ethers';
-import { FlashbotsTransactionResponse } from '@flashbots/ethers-provider-bundle';
+import { FlashbotsTransactionResponse, SimulationResponseSuccess } from '@flashbots/ethers-provider-bundle';
 import { YobotBid } from '../src/types';
 import {
   craftTransaction,
@@ -53,14 +53,18 @@ const params = (content: string) => {
 
 // ** Helper function to send discord notification ** //
 const postDiscord = async (url: string, body: string) => {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-type': 'application/json',
-    },
-    body,
-  });
-  console.log('Sent Discord Notification:', body);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-type': 'application/json',
+      },
+      body,
+    });
+    console.log('Sent Discord Notification:', body);
+  } catch (e) {
+    console.error('Failed to send discord notification!', e);
+  }
 };
 
 // ** CLI Helper ** //
@@ -117,16 +121,29 @@ const enterCommand = (url: string, rl: any) => {
   let knownMintPriceAbi: string; // the abi to get the mint price
   let knownTotalSupplyAbi: string; // the abi to get the total supply
   let knownMaxSupplyAbi: string; // the abi to get the max supply
+  let previousRoundBalance: number = 0; // The previous round balance to track inventory
 
   // ** Read stashed mintedOrders ** //
   mintedOrders = readJson(MINTED_ORDERS_FILE);
 
+  // TODO: check mintedOrders to see if they're complete
+
   // TODO: Check if abi function signatures are defined by environment variables!
 
-  const fillOrders = async (remainingOrders: any[]) => {
-    // ** Record Minted Transactions ** //
-    mintedOrders = [...mintedOrders, ...remainingOrders];
+  // ** Checks if our pending ERC721 mints are completed (would result in double count since balance increments too) ** //
+  const updateMintedOrders = async (mOrders: any[]) => {
+    const updatedOrders = mOrders;
 
+    // ** Iterate mintedOrders and check status ** //
+    for (const mo of mOrders) {
+      console.log('mintedOrder:', mo);
+    }
+
+    return updatedOrders;
+  };
+
+  // ** Attempts to fill orders using the searcher's balance (NOT inventory) ** //
+  const fillOrders = async (remainingOrders: any[]) => {
     // ** Get all the  ** //
     const mintingEvents = await fetchMintingEvents(
       infiniteMint,
@@ -138,12 +155,12 @@ const enterCommand = (url: string, rl: any) => {
     const tokens = mintingEvents.map((e: any) => e.id);
     console.log('Wallet has tokens:', tokens);
 
-    // ** Return orders we couldn't fill ** //
+    // ** Return orders we did fill ** //
     const nonFilledOrders = [];
 
     // ** Try to fill orders with the given token ids ** //
     let tokenIdNum = 0;
-    for (const order of mintedOrders) {
+    for (const order of remainingOrders) {
       if (tokenIdNum >= tokens.length) {
         nonFilledOrders.push(order);
       } else {
@@ -152,21 +169,31 @@ const enterCommand = (url: string, rl: any) => {
           discordWebhookUrl,
           params(`⌛ FILLING ORDER ${order.orderId} ⌛`),
         );
-        const fillRes = await fillOrder(
-          YobotERC721LimitOrderContract,
-          order.orderId,
-          tokens[tokenIdNum],
-          order.priceInWeiEach,
-          EOA_ADDRESS,
-          true, // we want the profit immediately to continue minting
-        );
-
-        // TODO: if the fillOrder response is bad, we add order back to nonFilledOrders
-        console.log('Got fill result:', fillRes);
-        await postDiscord(
-          discordWebhookUrl,
-          params(`✅ ORDER ${order.orderId} FILLED ✅`),
-        );
+        try {
+          const fillRes = await fillOrder(
+            YobotERC721LimitOrderContract,
+            order.orderId,
+            tokens[tokenIdNum],
+            order.priceInWeiEach,
+            EOA_ADDRESS,
+            true, // we want the profit immediately to continue minting
+          );
+          // TODO: if the fillOrder response is bad, we add order back to nonFilledOrders
+          console.log('Got fill result:', fillRes);
+          try {
+            await postDiscord(
+              discordWebhookUrl,
+              params(`✅ ORDER ${order.orderId} FILLED ✅`),
+            );
+          } catch (ex) { /* IGNORE */ }
+        } catch (e) {
+          console.log('Failed to fill order!', e);
+          await postDiscord(
+            discordWebhookUrl,
+            params(`❌ FAILED TO FILL ORDER ${order.orderId} ❌`),
+          );
+          nonFilledOrders.push(order);
+        }
       }
       tokenIdNum += 1;
     }
@@ -238,10 +265,9 @@ const enterCommand = (url: string, rl: any) => {
       const minPrice = mintPrice.add(currentGasPrice);
       console.log('Filtering with minPrice:', minPrice.toString());
       const filteredOrders = verifiedOrders.filter((order: YobotBid) => {
-        console.log('Comparing minPrice to order priceInWeiEach:', order.priceInWeiEach.toString());
         return minPrice.lt(order.priceInWeiEach);
       });
-      console.log('Got filtered orders:', filteredOrders);
+      console.log('Got filtered orders:', filteredOrders.length);
 
       // ** ///////////////////////////////////////// ** //
       // **                                           ** //
@@ -289,11 +315,20 @@ const enterCommand = (url: string, rl: any) => {
         // !! IGNORE !! //
       }
 
-      // ** Inventory is the max of our mintedOrders or the searcher's balance ** //
-      const inventory = Math.max(mintedOrders.length, balanceInt);
+      // ** If balance changed, we check mintedOrders for tx finality ** //
+      if (balance !== previousRoundBalance) {
+        mintedOrders = await updateMintedOrders(mintedOrders);
+      }
+
+      // ** Inventory is the searcher's balance plus minted orders ** //
+      const inventory = balanceInt + mintedOrders.length;
+      console.log('Searcher inventory:', inventory);
+
+      // ** Update the previous balance ** //
+      previousRoundBalance = balance;
 
       // ** Check enough left to mint from the total supply minus how many we minted** //
-      const fillableOrders = filteredOrders.slice(0, remainingSupply.toNumber());
+      const fillableOrders = filteredOrders.slice(mintedOrders.length, remainingSupply.toNumber());
       const remainingOrders = filteredOrders.slice(inventory).slice(0, remainingSupply.toNumber());
 
       // ** Try to get the total supply as a number ** //
@@ -316,6 +351,7 @@ const enterCommand = (url: string, rl: any) => {
 
       // ** Map Orders to transactions ** //
       const transactions: any[] = [];
+      let idAddition = 0;
       for (const order of remainingOrders) {
         // ** Craft the transaction data ** //
         // TODO: refactor this into a function
@@ -323,10 +359,13 @@ const enterCommand = (url: string, rl: any) => {
           'mint',
           [
             '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
-            totalSupply.toNumber(),
+            totalSupply.toNumber() + idAddition,
             // ethers.utils.randomBytes(32), // uint256 tokenId
           ],
         );
+
+        // ** Increment the token id addition ** //
+        idAddition += 1;
 
         // ** Craft mintable transactions ** //
         const tx = await craftTransaction(
@@ -344,7 +383,7 @@ const enterCommand = (url: string, rl: any) => {
         transactions.push(tx);
       }
 
-      console.log('Transactions:', transactions);
+      console.log('Transactions:', transactions.length);
 
       // !!!!! EXIT IF NO TRANSACTIONS !!!!! //
       if (transactions.length <= 0) {
@@ -444,11 +483,14 @@ const enterCommand = (url: string, rl: any) => {
           );
         }
 
-        // TODO: add the gas price to the remainingOrders
-        // TODO: so that when we fill order, we only fill what's profitable
-        const gasOrders = fillableOrders;
+        // ** Loop over the simulatedBundleRes.results and add gas cost to orders ** //
+        const gasOrders = 'results' in Object.keys(simulatedBundleRes) ? (simulatedBundleRes as SimulationResponseSuccess).results : [];
 
-        mintedOrders = await fillOrders(gasOrders);
+        // ** Add these to the minted orders ** //
+        mintedOrders = [...mintedOrders, ...gasOrders];
+
+        // ** Try to fill orders ** //
+        mintedOrders = await fillOrders(fillableOrders);
       } else {
         console.log('Simulation failed, discarding bundle...');
         await postDiscord(
@@ -499,7 +541,7 @@ const enterCommand = (url: string, rl: any) => {
   ordersWorker.on('message', (result: any) => {
     orderUpdateCount += 1;
     verifiedOrders = result.orders;
-    console.log('got verified orders:', verifiedOrders);
+    console.log('got verified orders:', verifiedOrders.length);
     console.log(`  [${orderUpdateCount}] Order Update - ${result.orders.length} open orders on block ${result.blockNumber}`);
   });
 
