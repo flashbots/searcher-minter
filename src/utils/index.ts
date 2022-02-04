@@ -23,3 +23,4 @@ export { default as fetchMintingEvents } from './FetchMintingEvents';
 
 // Miscellaneous
 export { default as compareOrderEvents } from './CompareOrderEvent';
+export { default as postDiscord } from './PostDiscord';

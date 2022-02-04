@@ -49,9 +49,7 @@ const fetchMintingEvents = async (
 
   // ** Combine the logs and sort by block number ** //
   const allLogs = [...toLogs, ...fromLogs];
-  // console.log('Got all logs:', allLogs);
   const sortedLogs = allLogs.sort((a, b) => (a.blockNumber > b.blockNumber ? 1 : -1));
-  // console.log('Sorted Logs:', sortedLogs);
 
   // ** Filter for current wallet tokens ** //
   let resultLogs: any = {};
