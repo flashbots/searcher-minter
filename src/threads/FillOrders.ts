@@ -1,8 +1,20 @@
+/* eslint-disable max-len */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-console */
 /* eslint-disable no-restricted-syntax */
 
-import { fillOrder, postDiscord } from "src/utils";
+import { FlashbotsTransactionResponse, SimulationResponseSuccess } from '@flashbots/ethers-provider-bundle';
+import { BigNumber } from 'ethers';
+import { configure, postDiscord } from 'src/utils';
+import {
+  craftTransaction,
+  createFlashbotsProvider,
+  sendFlashbotsBundle,
+  simulateBundle,
+  validateSimulation,
+  validateSubmitResponse,
+  craftBundle,
+} from '..';
 
 const {
   parentPort: fillOrdersParent,
@@ -16,6 +28,25 @@ type FillingOrder = {
 };
 
 let fillingOrders: FillingOrder[] = []; // orders that we placed to fill
+let fillingOrderTokenIds: string[] = []; // tokenIds that we placed to fill
+
+// ** Create Flashbots Provider ** //
+let fbp: any;
+
+const {
+  provider,
+  wallet,
+  EOA_ADDRESS,
+  flashbotsEndpoint,
+  CHAIN_ID: chainId,
+  BLOCKS_TILL_INCLUSION: blocksUntilInclusion,
+  LEGACY_GAS_PRICE: legacyGasPrice,
+  PRIORITY_FEE: priorityFee,
+  YobotInfiniteMintInterface: yobotInfiniteMintInterface,
+  // YobotERC721LimitOrderContract,
+  YobotERC721LimitOrderContractAddress,
+  DISCORD_WEBHOOK_URL: discordWebhookUrl,
+} = configure();
 
 fillOrdersParent.on('message', async (data: any) => {
   if (data.type === 'fill') {
@@ -27,58 +58,165 @@ fillOrdersParent.on('message', async (data: any) => {
       const {
         walletTokens,
         remainingOrders,
-        discordWebhookUrl,
-        YobotERC721LimitOrderContract,
-        eoaAddress,
       } = data;
 
       // ** Map wallet tokens to token ids ** //
       const tokens = walletTokens.map((e: any) => e.id);
       console.log('[FillOrdersThread] Wallet has tokens:', tokens);
 
-      // ** Try to fill orders with the given token ids ** //
+      // ** Craft the Transactions to Bundle ** //
+      const currentFillingOrders: FillingOrder[] = []; // orders that we placed to fill
+      const currentFillingOrderTokenIds: string[] = []; // tokenIds that we placed to fill
       let tokenIdNum = 0;
+      const transactions: any[] = [];
       for (const order of remainingOrders) {
-        if (tokenIdNum >= tokens.length) {
-          nonFilledOrders.push(order);
-        } else {
-          console.log('Attempting to fill order:', order);
-          await postDiscord(
-            discordWebhookUrl,
-            `⌛ FILLING ORDER ${order.orderId} ⌛`,
-          );
-          try {
-            const fillRes = await fillOrder(
-              YobotERC721LimitOrderContract,
-              order.orderId,
-              tokens[tokenIdNum],
-              order.priceInWeiEach,
-              eoaAddress,
+        if (
+          tokenIdNum < tokens.length // If we have enough tokens in our wallet
+          && !fillingOrderTokenIds.includes(tokens[tokenIdNum]) // if the token id is not already being used to fill
+        ) {
+          console.log('Crafting Transaction with tokenId:', tokens[tokenIdNum]);
+          // ** Craft the transaction data ** //
+          const txdata = yobotInfiniteMintInterface.encodeFunctionData(
+            'fillOrder',
+            [
+              order.orderId, // The order ID
+              tokens[tokenIdNum], // Order Number
+              order.priceInWeiEach, // Price in Wei Each
+              EOA_ADDRESS, // profit to
               true, // we want the profit immediately to continue minting
-            );
-            // TODO: if the fillOrder response is bad, we add order back to nonFilledOrders
-            console.log('Got fill result:', fillRes);
-            try {
-              await postDiscord(
-                discordWebhookUrl,
-                `✅ ORDER ${order.orderId} FILLED ✅`,
-              );
-            } catch (ex) { /* IGNORE */ }
-          } catch (e) {
-            console.log('Failed to fill order!', e);
-            await postDiscord(
-              discordWebhookUrl,
-              `❌ FAILED TO FILL ORDER ${order.orderId} ❌`,
-            );
-            nonFilledOrders.push(order);
-          }
+            ],
+          );
+
+          // ** Craft mintable transactions ** //
+          const tx = await craftTransaction(
+            provider,
+            wallet,
+            chainId,
+            blocksUntilInclusion,
+            legacyGasPrice,
+            priorityFee,
+            BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
+            YobotERC721LimitOrderContractAddress,
+            txdata,
+            BigNumber.from(0), // value in wei
+          );
+          transactions.push(tx);
+
+          // ** Add to the current filling orders ** //
+          currentFillingOrders.push({
+            orderId: order.orderId,
+            tokenId: tokens[tokenIdNum],
+          });
+          currentFillingOrderTokenIds.push(tokens[tokenIdNum]);
         }
         tokenIdNum += 1;
       }
 
-      // ** Save minted orders to a json file incase our searcher crashes ** //
-      // saveJson(nonFilledOrders, MINTED_ORDERS_FILE);
+      console.log('Transactions:', transactions.length);
+
+      // ** Craft a signed bundle of transactions ** //
+      const {
+        targetBlockNumber,
+        transactionBundle,
+      }: {
+        targetBlockNumber: number,
+        transactionBundle: string[]
+      } = await craftBundle(
+        provider,
+        fbp,
+        blocksUntilInclusion,
+        transactions,
+      );
+
+      // ** Simulate Bundle ** //
+      console.log('Simulating Bundle: ', transactionBundle);
+      console.log('Targeting block:', targetBlockNumber);
+      const simulation = await simulateBundle(
+        fbp,
+        targetBlockNumber,
+        transactionBundle,
+      );
+
+      console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
+
+      // ** Send Bundle to Flashbots ** //
+      if (validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
+        await postDiscord(
+          discordWebhookUrl,
+          '✅ SIMULATION SUCCESSFUL ✅',
+        );
+        await postDiscord(
+          discordWebhookUrl,
+          `💨 SENDING FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${transactions.length}`,
+        );
+        const bundleRes = await sendFlashbotsBundle(
+          fbp,
+          targetBlockNumber,
+          transactions,
+        );
+
+        console.log('Bundle response:', JSON.stringify(bundleRes));
+        const didBundleError = validateSubmitResponse(bundleRes);
+        console.error(`Did bundle submission error: ${didBundleError}`);
+
+        await postDiscord(
+          discordWebhookUrl,
+          `🚀 FILL ORDER BUNDLE SENT - ${JSON.stringify(bundleRes)}`,
+        );
+
+        // ** Wait the response ** //
+        const simulatedBundleRes = await (bundleRes as FlashbotsTransactionResponse).simulate();
+        console.log('Simulated bundle response:', JSON.stringify(simulatedBundleRes));
+        const awaiting = await (bundleRes as FlashbotsTransactionResponse).wait();
+        console.log('Awaited response:', JSON.stringify(awaiting));
+
+        await postDiscord(
+          discordWebhookUrl,
+          `🎉 AWAITED FILL ORDER BUNDLE RESPONSE - ${JSON.stringify(simulatedBundleRes)}`,
+        );
+
+        // ** User Stats isn't implemented on goerli ** //
+        if (chainId !== 5) {
+          // ** Get Bundle Stats ** //
+          // @ts-ignore
+          // const bundleStats = await fbp.getBundleStats(simulation.bundleHash, targetBlockNumber);
+          // console.log('Bundle stats:', JSON.stringify(bundleStats));
+
+          const searcherStats = await fbp.getUserStats();
+          console.log('User stats:', JSON.stringify(searcherStats));
+
+          await postDiscord(
+            discordWebhookUrl,
+            `👑 SEARCHER STATS: ${JSON.stringify(searcherStats)}`,
+          );
+        }
+
+        // ** Get Order Results ** //
+        const ordersRes = 'results' in Object.keys(simulatedBundleRes) ? (simulatedBundleRes as SimulationResponseSuccess).results : [];
+        console.log('Got results from simulation response:', ordersRes);
+
+        // ** Add to fillingOrders ** //
+        fillingOrders = fillingOrders.concat(currentFillingOrders);
+        fillingOrderTokenIds = fillingOrderTokenIds.concat(currentFillingOrderTokenIds);
+      } else {
+        console.log('Simulation failed, discarding bundle...');
+        await postDiscord(
+          discordWebhookUrl,
+          '❌ SIMULATION FAILED - DISCARDING BUNDLE ❌',
+        );
+      }
     }
     // !! Otherwise ignore, and fill later !! //
+  }
+
+  if (data.type === 'start') {
+    // ** Create Flashbots Provider if not already created yet ** //
+    if (fbp === undefined) {
+      fbp = await createFlashbotsProvider(
+        provider,
+        flashbotsEndpoint,
+        wallet,
+      );
+    }
   }
 });

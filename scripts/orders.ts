@@ -84,6 +84,18 @@ async function orders() {
 
   // ** Sort the orders in a separate function ** //
   sortOrders(verifiedOrders);
+
+  verifiedOrders.sort((a, b) => {
+    // ** Parse strings as big numbers ** //
+    const bp = BigNumber.from(b.priceInWeiEach);
+    const ap = BigNumber.from(a.priceInWeiEach);
+    return bp.sub(ap).gt(1) ? 1 : -1;
+  });
+
+
+  const numberLeftToMint = filteredOrders.map((o) => o.quantity).reduce((a, b) => a + b, 0) - inventoryQty;
+
+  return 1;
 }
 
 orders();

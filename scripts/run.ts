@@ -100,6 +100,16 @@ const enterCommand = (url: string, rl: any) => {
   let inventoryQty: number = 0; // The inventory quantity
   let walletTokens: any[] = []; // The tokens in the wallet
 
+  // ** ///////////////////////////////////////// ** //
+  // **              Define Workers               ** //
+  // ** ///////////////////////////////////////// ** //
+
+  const mempoolWorker = new Worker('./src/threads/Mempool.js');
+  const walletWorker = new Worker('./src/threads/Wallet.js');
+  const ordersWorker = new Worker('./src/threads/Orders.js');
+  const intervalWorker = new Worker('./src/threads/Interval.js');
+  const fillOrdersWorker = new Worker('./src/threads/FillOrders.js');
+
   // ** Read stashed mintedOrders ** //
   mintedOrders = readJson(MINTED_ORDERS_FILE);
 
@@ -120,10 +130,20 @@ const enterCommand = (url: string, rl: any) => {
   };
 
   // ** Attempts to fill orders using the searcher's balance (NOT inventory) ** //
-  const fillOrders = async (remainingOrders: any[]) => {
-    
-
-    return nonFilledOrders;
+  const fillOrders = async (
+    remainingOrders: any[],
+    currentGasPrice: any,
+  ) => {
+    fillOrdersWorker.postMessage({
+      type: 'fill',
+      walletTokens,
+      remainingOrders,
+      discordWebhookUrl,
+      YobotERC721LimitOrderContract: infiniteMint,
+      eoaAddress: EOA_ADDRESS,
+      currentGasPrice,
+      yobotInfiniteMintInterface,
+    });
   };
 
   // ** ///////////////////////////////////////// ** //
@@ -252,9 +272,11 @@ const enterCommand = (url: string, rl: any) => {
       // ** Update the previous balance ** //
       previousRoundBalance = balance;
 
+      // ** Fillable orders is just all open orders - handle pending fill orders in fillorders worker ** //
+      const fillableOrders = filteredOrders; // .slice(mintedOrders.length, remainingSupply.toNumber());
+
       // ** Check enough left to mint from the total supply minus how many we minted** //
       const remainingSupplyNum = remainingSupply.toNumber();
-      const fillableOrders = filteredOrders.slice(mintedOrders.length, remainingSupply.toNumber());
       const remainingOrders = filteredOrders.slice(inventory).slice(0, remainingSupply.toNumber());
       const numberLeftToMint = filteredOrders.map((o) => o.quantity).reduce((a, b) => a + b, 0) - inventoryQty;
 
@@ -285,7 +307,7 @@ const enterCommand = (url: string, rl: any) => {
         const data = yobotInfiniteMintInterface.encodeFunctionData(
           'mint',
           [
-            '0xf25e32C0f2928F198912A4F21008aF146Af8A05a', // address to
+            EOA_ADDRESS, // address to
             totalSupply.toNumber() + idAddition,
             // ethers.utils.randomBytes(32), // uint256 tokenId
           ],
@@ -440,13 +462,10 @@ const enterCommand = (url: string, rl: any) => {
   // ** ///////////////////////////////////////// ** //
   // ** ///////////////////////////////////////// ** //
   // **                                           ** //
-  // **                  WORKERS                  ** //
+  // **               WORKER HOOKS                ** //
   // **                                           ** //
   // ** ///////////////////////////////////////// ** //
   // ** ///////////////////////////////////////// ** //
-
-  // ** Create the Blocknative Mempool Listner Worker ** //
-  const mempoolWorker = new Worker('./src/threads/Mempool.js');
 
   mempoolWorker.on('message', mintHandler);
 
@@ -461,9 +480,6 @@ const enterCommand = (url: string, rl: any) => {
     console.warn(exitCode);
     await postDiscord(discordWebhookUrl, 'Mempool Worker Exited!');
   });
-
-  // ** Create the Yobot Orders Listner Worker ** //
-  const ordersWorker = new Worker('./src/threads/Orders.js');
 
   ordersWorker.on('message', (result: any) => {
     orderUpdateCount += 1;
@@ -484,9 +500,6 @@ const enterCommand = (url: string, rl: any) => {
     await postDiscord(discordWebhookUrl, 'Orders Worker Exited!');
   });
 
-  // ** Create the Interval Actor ** //
-  const intervalWorker = new Worker('./src/threads/Interval.js');
-
   intervalWorker.on('message', async (trigger: any) => {
     console.log(`INTERVAL TRIGGER [${new Date().getTime()}]`);
     await mintHandler(trigger);
@@ -503,9 +516,6 @@ const enterCommand = (url: string, rl: any) => {
     console.warn(exitCode);
     await postDiscord(discordWebhookUrl, 'Interval Worker Exited!');
   });
-
-  // ** Create the Wallet Actor ** //
-  const walletWorker = new Worker('./src/threads/Wallet.js');
 
   walletWorker.on('message', async (tokens: any) => {
     console.log(`WALLET TRIGGER [${new Date().getTime()}]`);
@@ -526,6 +536,22 @@ const enterCommand = (url: string, rl: any) => {
     await postDiscord(discordWebhookUrl, 'Wallet Worker Exited!');
   });
 
+  fillOrdersWorker.on('message', () => {
+    console.log(`Parent Got Message from FillOrders Worker [${new Date().getTime()}]`);
+  });
+
+  fillOrdersWorker.on('error', async (error: any) => {
+    console.error('FillOrders Worker Errored!');
+    console.error(error);
+    await postDiscord(discordWebhookUrl, 'FillOrders Worker Errored!');
+  });
+
+  fillOrdersWorker.on('exit', async (exitCode: any) => {
+    console.warn('FillOrders Worker Exited!');
+    console.warn(exitCode);
+    await postDiscord(discordWebhookUrl, 'FillOrders Worker Exited!');
+  });
+
   // ** Start Workers ** //
   mempoolWorker.postMessage({
     type: 'start',
@@ -543,5 +569,10 @@ const enterCommand = (url: string, rl: any) => {
     mintingContract: infiniteMint,
     provider,
     eoaAddress: EOA_ADDRESS,
+  });
+
+  // ** Send a start to fill orders worker to instantiate local variables ** //
+  fillOrdersWorker.postMessage({
+    type: 'start',
   });
 })();
