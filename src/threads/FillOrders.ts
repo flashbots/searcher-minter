@@ -5,8 +5,9 @@
 
 import { FlashbotsTransactionResponse, SimulationResponseSuccess } from '@flashbots/ethers-provider-bundle';
 import { BigNumber } from 'ethers';
-import { configure, postDiscord } from 'src/utils';
 import {
+  configure,
+  postDiscord,
   craftTransaction,
   createFlashbotsProvider,
   sendFlashbotsBundle,
@@ -42,7 +43,7 @@ const {
   BLOCKS_TILL_INCLUSION: blocksUntilInclusion,
   LEGACY_GAS_PRICE: legacyGasPrice,
   PRIORITY_FEE: priorityFee,
-  YobotInfiniteMintInterface: yobotInfiniteMintInterface,
+  YobotERC721LimitOrderInterface,
   // YobotERC721LimitOrderContract,
   YobotERC721LimitOrderContractAddress,
   DISCORD_WEBHOOK_URL: discordWebhookUrl,
@@ -60,9 +61,15 @@ fillOrdersParent.on('message', async (data: any) => {
         remainingOrders,
       } = data;
 
+      // !! If we don't have any remaining orders, we can break here !! //
+      if (remainingOrders.length <= 0) {
+        console.log('No remaining orders, leaving fillOrders worker');
+        fillingLocked = false;
+        return;
+      }
+
       // ** Map wallet tokens to token ids ** //
       const tokens = walletTokens.map((e: any) => e.id);
-      console.log('[FillOrdersThread] Wallet has tokens:', tokens);
 
       // ** Craft the Transactions to Bundle ** //
       const currentFillingOrders: FillingOrder[] = []; // orders that we placed to fill
@@ -76,7 +83,7 @@ fillOrdersParent.on('message', async (data: any) => {
         ) {
           console.log('Crafting Transaction with tokenId:', tokens[tokenIdNum]);
           // ** Craft the transaction data ** //
-          const txdata = yobotInfiniteMintInterface.encodeFunctionData(
+          const txdata = YobotERC721LimitOrderInterface.encodeFunctionData(
             'fillOrder',
             [
               order.orderId, // The order ID
@@ -114,6 +121,14 @@ fillOrdersParent.on('message', async (data: any) => {
 
       console.log('Transactions:', transactions.length);
 
+      // !! If we don't have any transactions, we can break here !! //
+      if (transactions.length <= 0) {
+        console.log('No bundle transactions, leaving fillOrders worker');
+        fillingLocked = false;
+        return;
+      }
+      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
+
       // ** Craft a signed bundle of transactions ** //
       const {
         targetBlockNumber,
@@ -131,11 +146,22 @@ fillOrdersParent.on('message', async (data: any) => {
       // ** Simulate Bundle ** //
       console.log('Simulating Bundle: ', transactionBundle);
       console.log('Targeting block:', targetBlockNumber);
-      const simulation = await simulateBundle(
-        fbp,
-        targetBlockNumber,
-        transactionBundle,
-      );
+      let simulation;
+      try {
+        simulation = await simulateBundle(
+          fbp,
+          targetBlockNumber,
+          transactionBundle,
+        );
+      } catch (e) {
+        console.error('Simulation Error:', e);
+        await postDiscord(
+          discordWebhookUrl,
+          `❌ SIMULATION ERRORED ❌ Response=${JSON.stringify(e.body)}`,
+        );
+        fillingLocked = false;
+        return;
+      }
 
       console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
 
@@ -205,6 +231,14 @@ fillOrdersParent.on('message', async (data: any) => {
           '❌ SIMULATION FAILED - DISCARDING BUNDLE ❌',
         );
       }
+
+      // ** Unlock Filling ** //
+      fillingLocked = false;
+    } else {
+      await postDiscord(
+        discordWebhookUrl,
+        '🔒 FILLING ORDERS LOCKED 🔒',
+      );
     }
     // !! Otherwise ignore, and fill later !! //
   }

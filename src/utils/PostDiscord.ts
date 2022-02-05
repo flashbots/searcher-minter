@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import fetch from 'cross-fetch';
 
 // ** Webhook Body Helper ** //
 const params = (content: string) => JSON.stringify({

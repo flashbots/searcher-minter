@@ -1,9 +1,9 @@
 import { FlashbotsBundleProvider } from '@flashbots/ethers-provider-bundle';
-import { Web3Provider, InfuraProvider, AlchemyProvider } from '@ethersproject/providers';
+import { BaseProvider } from '@ethersproject/providers';
 import { Wallet } from 'ethers';
 
 const createFlashbotsProvider = async (
-  provider: Web3Provider | InfuraProvider | AlchemyProvider,
+  provider: BaseProvider,
   flashbots_endpoint: string,
   wallet: Wallet,
 ): Promise<FlashbotsBundleProvider> => {

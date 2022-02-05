@@ -4,7 +4,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable max-len */
 /* eslint-disable no-console */
-import fetch from 'cross-fetch';
 import { BigNumber, ethers } from 'ethers';
 import { FlashbotsTransactionResponse, SimulationResponseSuccess } from '@flashbots/ethers-provider-bundle';
 import { YobotBid } from '../src/types';
@@ -99,6 +98,8 @@ const enterCommand = (url: string, rl: any) => {
   let previousRoundBalance: number = 0; // The previous round balance to track inventory
   let inventoryQty: number = 0; // The inventory quantity
   let walletTokens: any[] = []; // The tokens in the wallet
+  let isTotalSupplyDerived: boolean = false;
+  let derivedTotalSupply: number = 0;
 
   // ** ///////////////////////////////////////// ** //
   // **              Define Workers               ** //
@@ -130,19 +131,15 @@ const enterCommand = (url: string, rl: any) => {
   };
 
   // ** Attempts to fill orders using the searcher's balance (NOT inventory) ** //
-  const fillOrders = async (
+  const fillOrders = (
     remainingOrders: any[],
     currentGasPrice: any,
   ) => {
+    console.log('Sending Fill orders to Fill Orders Worker...');
     fillOrdersWorker.postMessage({
       type: 'fill',
-      walletTokens,
-      remainingOrders,
-      discordWebhookUrl,
-      YobotERC721LimitOrderContract: infiniteMint,
-      eoaAddress: EOA_ADDRESS,
-      currentGasPrice,
-      yobotInfiniteMintInterface,
+      walletTokens, // : JSON.stringify(walletTokens),
+      remainingOrders, // : JSON.stringify(remainingOrders),
     });
   };
 
@@ -274,23 +271,17 @@ const enterCommand = (url: string, rl: any) => {
 
       // ** Fillable orders is just all open orders - handle pending fill orders in fillorders worker ** //
       const fillableOrders = filteredOrders; // .slice(mintedOrders.length, remainingSupply.toNumber());
+      console.log('Fillable orders:', fillableOrders.length);
 
       // ** Check enough left to mint from the total supply minus how many we minted** //
       const remainingSupplyNum = remainingSupply.toNumber();
       const remainingOrders = filteredOrders.slice(inventory).slice(0, remainingSupply.toNumber());
-      const numberLeftToMint = filteredOrders.map((o) => o.quantity).reduce((a, b) => a + b, 0) - inventoryQty;
+      const numberLeftToMint = filteredOrders.map((o) => parseInt(o.quantity, 10));
+      console.log('Reduced orders:', numberLeftToMint);
 
-      // ** Try to get the total supply as a number ** //
-      let totalSupplyNum: number = 0;
-      try {
-        totalSupplyNum = totalSupply.toNumber();
-      } catch (e) {
-        try {
-          totalSupplyNum = parseInt(totalSupply.toString(), 10);
-        } catch (ex) {
-          console.log('Failed to impute the total supply as a number :((');
-        }
-      }
+      const reducedNumToMint = numberLeftToMint.reduce((a, b) => a + b, 0) - inventoryQty;
+
+      console.log('Number left to mint:', reducedNumToMint);
 
       // ** ///////////////////////////////////////// ** //
       // **                                           ** //
@@ -298,23 +289,30 @@ const enterCommand = (url: string, rl: any) => {
       // **                                           ** //
       // ** ///////////////////////////////////////// ** //
 
+      // ** Use derived total supply if we are failing to mint ** //
+      let mintingTotalSupply = totalSupply.toNumber();
+      if (mintingTotalSupply === 0 && (
+        successfulTotalSupplyAbi === undefined
+        || successfulTotalSupplyAbi === ''
+      )) {
+        mintingTotalSupply = derivedTotalSupply;
+        isTotalSupplyDerived = true;
+      }
+
       // ** Map Orders to transactions ** //
       const transactions: any[] = [];
-      let idAddition = 0;
-      for (let i = 0; i < numberLeftToMint; i += 1) {
+      for (let i = 0; i < reducedNumToMint; i += 1) {
         // ** Craft the transaction data ** //
         // TODO: refactor this into a function
         const data = yobotInfiniteMintInterface.encodeFunctionData(
           'mint',
           [
             EOA_ADDRESS, // address to
-            totalSupply.toNumber() + idAddition,
+            mintingTotalSupply + i,
             // ethers.utils.randomBytes(32), // uint256 tokenId
           ],
         );
-
-        // ** Increment the token id addition ** //
-        idAddition += 1;
+        console.log('Crafting transaction with token id:', totalSupply.toNumber() + i);
 
         // ** Craft mintable transactions ** //
         const tx = await craftTransaction(
@@ -332,6 +330,9 @@ const enterCommand = (url: string, rl: any) => {
         transactions.push(tx);
       }
 
+      // ** Update our total supply if derived ** //
+      if (isTotalSupplyDerived) derivedTotalSupply += transactions.length;
+
       console.log('Transactions:', transactions.length);
 
       // !!!!! EXIT IF NO TRANSACTIONS !!!!! //
@@ -340,7 +341,7 @@ const enterCommand = (url: string, rl: any) => {
 
         // ** We still want to try to fill orders if we have an inventory ** //
         if (inventory > 0) {
-          mintedOrders = await fillOrders(fillableOrders);
+          fillOrders(fillableOrders, currentGasPrice);
         }
 
         // ** Release the Minting Lock ** //
@@ -372,11 +373,22 @@ const enterCommand = (url: string, rl: any) => {
       // ** Simulate Bundle ** //
       console.log('Simulating Bundle: ', transactionBundle);
       console.log('Targeting block:', targetBlockNumber);
-      const simulation = await simulateBundle(
-        fbp,
-        targetBlockNumber,
-        transactionBundle,
-      );
+      let simulation;
+      try {
+        simulation = await simulateBundle(
+          fbp,
+          targetBlockNumber,
+          transactionBundle,
+        );
+      } catch (e) {
+        console.log('Simulation error:', e);
+        await postDiscord(
+          discordWebhookUrl,
+          `❌ MINTING SIMULATION ERRORED ❌ Response=${JSON.stringify(e.body)}`,
+        );
+        mintingLocked = false;
+        return;
+      }
 
       console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
 
@@ -433,13 +445,16 @@ const enterCommand = (url: string, rl: any) => {
         }
 
         // ** Loop over the simulatedBundleRes.results and add gas cost to orders ** //
-        const gasOrders = 'results' in Object.keys(simulatedBundleRes) ? (simulatedBundleRes as SimulationResponseSuccess).results : [];
+        const gasOrders = 'results' in simulatedBundleRes ? (simulatedBundleRes as SimulationResponseSuccess).results : [];
+
+        console.log('Is results in simulated bundle response:', 'results' in simulatedBundleRes);
+        console.log('Gas orders:', JSON.stringify(gasOrders));
 
         // ** Add these to the minted orders ** //
         mintedOrders = [...mintedOrders, ...gasOrders];
 
         // ** Try to fill orders ** //
-        mintedOrders = await fillOrders(fillableOrders);
+        fillOrders(fillableOrders, currentGasPrice);
       } else {
         console.log('Simulation failed, discarding bundle...');
         await postDiscord(
@@ -500,28 +515,28 @@ const enterCommand = (url: string, rl: any) => {
     await postDiscord(discordWebhookUrl, 'Orders Worker Exited!');
   });
 
-  intervalWorker.on('message', async (trigger: any) => {
-    console.log(`INTERVAL TRIGGER [${new Date().getTime()}]`);
-    await mintHandler(trigger);
-  });
+  // intervalWorker.on('message', async (trigger: any) => {
+  //   console.log(`INTERVAL TRIGGER [${new Date().getTime()}]`);
+  //   await mintHandler(trigger);
+  // });
 
-  intervalWorker.on('error', async (error: any) => {
-    console.error('Interval Worker Errored!');
-    console.error(error);
-    await postDiscord(discordWebhookUrl, 'Interval Worker Errored!');
-  });
+  // intervalWorker.on('error', async (error: any) => {
+  //   console.error('Interval Worker Errored!');
+  //   console.error(error);
+  //   await postDiscord(discordWebhookUrl, 'Interval Worker Errored!');
+  // });
 
-  intervalWorker.on('exit', async (exitCode: any) => {
-    console.warn('Interval Worker Exited!');
-    console.warn(exitCode);
-    await postDiscord(discordWebhookUrl, 'Interval Worker Exited!');
-  });
+  // intervalWorker.on('exit', async (exitCode: any) => {
+  //   console.warn('Interval Worker Exited!');
+  //   console.warn(exitCode);
+  //   await postDiscord(discordWebhookUrl, 'Interval Worker Exited!');
+  // });
 
   walletWorker.on('message', async (tokens: any) => {
     console.log(`WALLET TRIGGER [${new Date().getTime()}]`);
-    console.log(`Tokens in wallet: ${tokens}`);
     // ** Set the tokens in the wallet ** //
     walletTokens = tokens;
+    await mintHandler('TIME_GRANULARITY');
   });
 
   walletWorker.on('error', async (error: any) => {
@@ -566,9 +581,6 @@ const enterCommand = (url: string, rl: any) => {
   });
   walletWorker.postMessage({
     type: 'start',
-    mintingContract: infiniteMint,
-    provider,
-    eoaAddress: EOA_ADDRESS,
   });
 
   // ** Send a start to fill orders worker to instantiate local variables ** //

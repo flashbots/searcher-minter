@@ -46,13 +46,20 @@ const configure = () => {
   // const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
 
   // ** Setup Alchemy Provider ** //
-  const provider = new providers.AlchemyProvider(CHAIN_ID, process.env.ALCHEMY_API_KEY);
+  // const provider = new providers.AlchemyProvider(CHAIN_ID, process.env.ALCHEMY_API_KEY);
 
   // ** Configure Flashbots Relay Endpoint ** //
   const flashbotsEndpoint = CHAIN_ID === 1 ? 'https://relay.flashbots.net' : 'https://relay-goerli.flashbots.net';
 
+  // ** Using multiple api keys for the provider will be more performant ** //
+  const defaultProvider = providers.getDefaultProvider(CHAIN_ID, {
+    etherscan: process.env.ETHERSCAN_API_KEY,
+    infura: process.env.INFURA_PROJECT_ID,
+    alchemy: process.env.ALCHEMY_API_KEY,
+  });
+  const provider = defaultProvider;
+
   // ** Setup the wallet ** //
-  const defaultProvider = providers.getDefaultProvider(CHAIN_ID, { alchemy: process.env.ALCHEMY_API_KEY });
   const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, defaultProvider);
 
   // ** Import the Yobot Abis ** //

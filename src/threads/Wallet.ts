@@ -1,20 +1,21 @@
 /* eslint-disable no-restricted-syntax */
 
-import { fetchMintingEvents } from '../utils';
+import { configure, fetchMintingEvents } from '../utils';
 
 const {
   parentPort: walletParent,
 } = require('worker_threads');
 
-const WALLET_GRANULARITY = 5_000;
+const WALLET_GRANULARITY = 10_000;
+
+const {
+  provider,
+  MINTING_CONTRACT: mintingContract,
+  EOA_ADDRESS: eoaAddress,
+} = configure();
 
 walletParent.on('message', async (data: any) => {
   if (data.type === 'start') {
-    const {
-      mintingContract,
-      provider,
-      eoaAddress,
-    } = data;
     // ** Create an interval to send the parent the tokens in the wallet ** //
     // ** Executes every WALLET_GRANULARITY / 1_000 seconds ** //
     setInterval(async () => {
@@ -26,7 +27,7 @@ walletParent.on('message', async (data: any) => {
         provider,
         eoaAddress,
       );
-      intervalParent.postMessage(mintingEvents);
+      walletParent.postMessage(mintingEvents);
     }, WALLET_GRANULARITY);
   }
 });

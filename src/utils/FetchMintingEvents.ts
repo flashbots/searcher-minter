@@ -4,8 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
 /* eslint-disable no-multi-spaces */
-import { AlchemyProvider } from '@ethersproject/providers';
-import { Contract, providers } from 'ethers';
+import { BaseProvider } from '@ethersproject/providers';
 import { hexZeroPad, id } from 'ethers/lib/utils';
 
 // ** CONSTANTS ** //
@@ -15,7 +14,7 @@ const ERC721_TRANSFER_EVENT_ABI = ['event Transfer(address indexed from, address
 const fetchMintingEvents = async (
   MintingContractAddress: string,
   filterStartBlock: number,
-  provider: providers.InfuraProvider | AlchemyProvider,
+  provider: BaseProvider,
   filterAddress: string,
 ) => {
   // ** Pad the filter address ** //
