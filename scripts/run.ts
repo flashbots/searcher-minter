@@ -270,8 +270,9 @@ const enterCommand = (url: string, rl: any) => {
       if (balance !== previousRoundBalance) {
         mintedOrders = await updateMintedOrders(mintedOrders);
         previousRoundBalance = balance;
-        saveJson(MINTED_ORDERS_FILE, JSON.stringify(mintedOrders));
-        saveJson(PREVIOUS_ROUND_BALANCE, JSON.stringify({ balance: previousRoundBalance }));
+        saveJson(MINTED_ORDERS_FILE, JSON.parse(JSON.stringify(mintedOrders)));
+        const prevBalanceJSON: JSON = JSON.parse(JSON.stringify({ balance: previousRoundBalance }));
+        saveJson(PREVIOUS_ROUND_BALANCE, prevBalanceJSON);
       }
 
       // ** Inventory is the searcher's balance plus minted orders ** //
@@ -313,8 +314,14 @@ const enterCommand = (url: string, rl: any) => {
         isTotalSupplyDerived = true;
       }
 
+      // ** Get previous block's gas limit ** //
+      const currentBlockNumber = await provider.getBlockNumber();
+      const block = await provider.getBlock(currentBlockNumber);
+      const blockGasLimit = block.gasLimit;
+
       // ** Map Orders to transactions ** //
       const transactions: any[] = [];
+      let cumulativeGasCost = BigNumber.from(0);
       for (let i = 0; i < reducedNumToMint; i += 1) {
         // ** Craft the transaction data ** //
         // TODO: refactor this into a function
@@ -328,6 +335,17 @@ const enterCommand = (url: string, rl: any) => {
         );
         console.log('Crafting transaction with token id:', totalSupply.toNumber() + i);
 
+        // ** Estimating tx gas ** //
+        const gasEstimate = await provider.estimateGas({ to: infiniteMint, from: EOA_ADDRESS, data });
+        console.log('Got gas estimate:', gasEstimate);
+
+        if (cumulativeGasCost.add(gasEstimate).gt(blockGasLimit)) {
+          console.log('Gas limit reached, sending a bundle with tx count:', transactions.length);
+          break;
+        } else {
+          cumulativeGasCost = cumulativeGasCost.add(gasEstimate);
+        }
+
         // ** Craft mintable transactions ** //
         const tx = await craftTransaction(
           provider,
@@ -336,7 +354,7 @@ const enterCommand = (url: string, rl: any) => {
           blocksUntilInclusion,
           legacyGasPrice,
           priorityFee,
-          BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
+          gasEstimate, // BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
           infiniteMint,
           data,
           BigNumber.from(mintPrice), // value in wei (mint price)

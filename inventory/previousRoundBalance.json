@@ -1,1 +1,3 @@
-"{\"balance\":{\"type\":\"BigNumber\",\"hex\":\"0x00\"}}"
+{
+  "balance": 0
+}
