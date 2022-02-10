@@ -25,7 +25,8 @@
     "scripts:balance": "npx ts-node scripts/balance.ts",
     "scripts:fill": "npx ts-node scripts/fill.ts",
     "scripts:tokens": "npx ts-node scripts/tokens.ts",
-    "scripts:approve": "npx ts-node scripts/approve.ts"
+    "scripts:approve": "npx ts-node scripts/approve.ts",
+    "scripts:mempool": "npx ts-node scripts/mempool.ts"
   },
   "license": "Unlicense",
   "dependencies": {

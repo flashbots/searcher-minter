@@ -136,7 +136,7 @@ const enterCommand = (url: string, rl: any) => {
       console.log('mintedOrder:', mo);
       const checkedTxn = await checkTxn(mo.txHash, provider);
       // ** If the transaction hasn't landed yet, add back to pending orders ** //
-      if (!checkedTxn) updatedOrders.push(checkedTxn);
+      if (!checkedTxn) updatedOrders.push(mo);
     }
 
     return updatedOrders;
@@ -342,6 +342,7 @@ const enterCommand = (url: string, rl: any) => {
           BigNumber.from(mintPrice), // value in wei (mint price)
         );
         transactions.push(tx);
+        console.log('Got Crafted Transaction:', tx);
       }
 
       // ** Update our total supply if derived ** //

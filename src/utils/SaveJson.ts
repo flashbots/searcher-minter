@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const saveJson = (data: any, path: string) => {
+const saveJson = (path: string, data: any) => {
   try {
     fs.writeFileSync(path, JSON.stringify(data));
   } catch (err) {
