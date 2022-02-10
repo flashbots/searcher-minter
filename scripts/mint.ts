@@ -139,7 +139,7 @@ async function main() {
       ],
     );
 
-    saveJson(bundleRes, './output/mint_output.json');
+    saveJson('./output/mint_output.json', bundleRes);
 
     console.log('Bundle response:', JSON.stringify(bundleRes));
     const didBundleError = validateSubmitResponse(bundleRes);

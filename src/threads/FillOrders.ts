@@ -101,7 +101,7 @@ fillOrdersParent.on('message', async (data: any) => {
           );
 
           // ** Estimating tx gas ** //
-          let gasEstimate = BigNumber.from(100_000);
+          let gasEstimate = BigNumber.from(200_000);
           try {
             const tempEstimate = await provider.estimateGas({ to: YobotERC721LimitOrderContractAddress, from: EOA_ADDRESS, data: txdata });
             gasEstimate = tempEstimate;
@@ -250,7 +250,7 @@ fillOrdersParent.on('message', async (data: any) => {
         console.log('Simulation failed, discarding bundle...');
         await postDiscord(
           discordWebhookUrl,
-          '❌ SIMULATION FAILED - DISCARDING BUNDLE ❌',
+          '❌ SFILL ORDER IMULATION FAILED - DISCARDING BUNDLE ❌',
         );
       }
 
