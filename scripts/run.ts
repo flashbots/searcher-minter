@@ -4,7 +4,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable max-len */
 /* eslint-disable no-console */
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import { FlashbotsTransactionResponse, SimulationResponseSuccess } from '@flashbots/ethers-provider-bundle';
 import { YobotBid } from '../src/types';
 import {
@@ -18,15 +18,23 @@ import {
 } from '../src/flashbots';
 import {
   callBalance,
-  configure, extractMaxSupplies, extractMintPrice, extractTotalSupplies, fetchMintingEvents, fillOrder, postDiscord, readJson, saveJson,
+  checkTxn,
+  configure,
+  extractMaxSupplies,
+  extractMintPrice,
+  extractTotalSupplies,
+  postDiscord,
+  readJson,
+  saveJson,
 } from '../src/utils';
 
-const readline = require('readline');
 const { Worker } = require('worker_threads');
 
 require('dotenv').config();
 
+// ** INVENTORY FILES ** //
 const MINTED_ORDERS_FILE = './inventory/minted.json';
+const PREVIOUS_ROUND_BALANCE = './inventory/previousRoundBalance.json';
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 // !!                                 !! //
@@ -113,6 +121,7 @@ const enterCommand = (url: string, rl: any) => {
 
   // ** Read stashed mintedOrders ** //
   mintedOrders = readJson(MINTED_ORDERS_FILE);
+  previousRoundBalance = readJson(PREVIOUS_ROUND_BALANCE).balance;
 
   // TODO: check mintedOrders to see if they're complete
 
@@ -120,11 +129,14 @@ const enterCommand = (url: string, rl: any) => {
 
   // ** Checks if our pending ERC721 mints are completed (would result in double count since balance increments too) ** //
   const updateMintedOrders = async (mOrders: any[]) => {
-    const updatedOrders = mOrders;
+    const updatedOrders = [];
 
     // ** Iterate mintedOrders and check status ** //
     for (const mo of mOrders) {
       console.log('mintedOrder:', mo);
+      const checkedTxn = await checkTxn(mo.txHash, provider);
+      // ** If the transaction hasn't landed yet, add back to pending orders ** //
+      if (!checkedTxn) updatedOrders.push(checkedTxn);
     }
 
     return updatedOrders;
@@ -257,7 +269,9 @@ const enterCommand = (url: string, rl: any) => {
       // ** If balance changed, we check mintedOrders for tx finality ** //
       if (balance !== previousRoundBalance) {
         mintedOrders = await updateMintedOrders(mintedOrders);
-        // mintedOrdersQty = mintedOrders.map((o) => o.)
+        previousRoundBalance = balance;
+        saveJson(MINTED_ORDERS_FILE, JSON.stringify(mintedOrders));
+        saveJson(PREVIOUS_ROUND_BALANCE, JSON.stringify({ balance: previousRoundBalance }));
       }
 
       // ** Inventory is the searcher's balance plus minted orders ** //

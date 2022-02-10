@@ -144,7 +144,7 @@ fillOrdersParent.on('message', async (data: any) => {
       );
 
       // ** Simulate Bundle ** //
-      console.log('Simulating Bundle: ', transactionBundle);
+      console.log('Simulating Fill Order Bundle: ', transactionBundle);
       console.log('Targeting block:', targetBlockNumber);
       let simulation;
       try {
@@ -157,7 +157,7 @@ fillOrdersParent.on('message', async (data: any) => {
         console.error('Simulation Error:', e);
         await postDiscord(
           discordWebhookUrl,
-          `❌ SIMULATION ERRORED ❌ Response=${JSON.stringify(e.body)}`,
+          `❌ FILL ORDER SIMULATION ERRORED ❌ Response=${JSON.stringify(e.body)}`,
         );
         fillingLocked = false;
         return;
@@ -169,11 +169,11 @@ fillOrdersParent.on('message', async (data: any) => {
       if (validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
         await postDiscord(
           discordWebhookUrl,
-          '✅ SIMULATION SUCCESSFUL ✅',
+          '✅ FILL ORDER SIMULATION SUCCESSFUL ✅',
         );
         await postDiscord(
           discordWebhookUrl,
-          `💨 SENDING FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${transactions.length}`,
+          `💨 SENDING FILL ORDER FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${transactions.length}`,
         );
         const bundleRes = await sendFlashbotsBundle(
           fbp,
