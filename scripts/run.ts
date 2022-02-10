@@ -322,7 +322,8 @@ const enterCommand = (url: string, rl: any) => {
       // ** Map Orders to transactions ** //
       const transactions: any[] = [];
       let cumulativeGasCost = BigNumber.from(0);
-      for (let i = 0; i < reducedNumToMint; i += 1) {
+      // for (let i = 0; i < reducedNumToMint; i += 1) {
+      for (let i = 0; i < 2; i += 1) {
         // ** Craft the transaction data ** //
         // TODO: refactor this into a function
         const data: any = yobotInfiniteMintInterface.encodeFunctionData(
@@ -336,8 +337,13 @@ const enterCommand = (url: string, rl: any) => {
         console.log('Crafting transaction with token id:', totalSupply.toNumber() + i);
 
         // ** Estimating tx gas ** //
-        const gasEstimate = await provider.estimateGas({ to: infiniteMint, from: EOA_ADDRESS, data });
-        console.log('Got gas estimate:', gasEstimate);
+        let gasEstimate = BigNumber.from(100_000);
+        try {
+          const tempEstimate = await provider.estimateGas({ to: infiniteMint, from: EOA_ADDRESS, data });
+          gasEstimate = tempEstimate;
+        } catch (e) {
+          // !! IGNORE !! //
+        }
 
         if (cumulativeGasCost.add(gasEstimate).gt(blockGasLimit)) {
           console.log('Gas limit reached, sending a bundle with tx count:', transactions.length);

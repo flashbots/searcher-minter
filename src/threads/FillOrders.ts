@@ -71,11 +71,17 @@ fillOrdersParent.on('message', async (data: any) => {
       // ** Map wallet tokens to token ids ** //
       const tokens = walletTokens.map((e: any) => e.id);
 
+      // ** Get previous block's gas limit ** //
+      const currentBlockNumber = await provider.getBlockNumber();
+      const block = await provider.getBlock(currentBlockNumber);
+      const blockGasLimit = block.gasLimit;
+
       // ** Craft the Transactions to Bundle ** //
       const currentFillingOrders: FillingOrder[] = []; // orders that we placed to fill
       const currentFillingOrderTokenIds: string[] = []; // tokenIds that we placed to fill
       let tokenIdNum = 0;
       const transactions: any[] = [];
+      let cumulativeGasCost = BigNumber.from(0);
       for (const order of remainingOrders) {
         if (
           tokenIdNum < tokens.length // If we have enough tokens in our wallet
@@ -94,6 +100,22 @@ fillOrdersParent.on('message', async (data: any) => {
             ],
           );
 
+          // ** Estimating tx gas ** //
+          let gasEstimate = BigNumber.from(100_000);
+          try {
+            const tempEstimate = await provider.estimateGas({ to: YobotERC721LimitOrderContractAddress, from: EOA_ADDRESS, data: txdata });
+            gasEstimate = tempEstimate;
+          } catch (e) {
+            // !! IGNORE !! //
+          }
+
+          if (cumulativeGasCost.add(gasEstimate).gt(blockGasLimit)) {
+            console.log('Gas limit reached, sending a fill order bundle with tx count:', transactions.length);
+            break;
+          } else {
+            cumulativeGasCost = cumulativeGasCost.add(gasEstimate);
+          }
+
           // ** Craft mintable transactions ** //
           const tx = await craftTransaction(
             provider,
@@ -102,7 +124,7 @@ fillOrdersParent.on('message', async (data: any) => {
             blocksUntilInclusion,
             legacyGasPrice,
             priorityFee,
-            BigNumber.from(0), // set gas limit to 0 to use the previous block's gas limit
+            gasEstimate,
             YobotERC721LimitOrderContractAddress,
             txdata,
             BigNumber.from(0), // value in wei

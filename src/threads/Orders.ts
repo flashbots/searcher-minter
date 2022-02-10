@@ -81,7 +81,6 @@ orderWorkerParent.on('message', async (data: any) => {
     provider.on('block', async (blockNumber: number) => {
       await getOrders(blockNumber);
     });
-    console.log('In orders...');
     // ** Manually trigger first block ** //
     const currentBlockNumber = await provider.getBlockNumber();
     await getOrders(currentBlockNumber);
