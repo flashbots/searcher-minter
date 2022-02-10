@@ -1,8 +1,8 @@
 const fs = require('fs');
 
-const saveJson = (path: string, data: JSON) => {
+const saveJson = (path: string, data: any) => {
   try {
-    fs.writeFileSync(path, data);
+    fs.writeFileSync(path, JSON.stringify(data));
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error(err);

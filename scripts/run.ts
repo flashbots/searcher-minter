@@ -120,7 +120,7 @@ const enterCommand = (url: string, rl: any) => {
   const fillOrdersWorker = new Worker('./src/threads/FillOrders.js');
 
   // ** Read stashed mintedOrders ** //
-  mintedOrders = readJson(MINTED_ORDERS_FILE);
+  mintedOrders = readJson(MINTED_ORDERS_FILE).orders;
   previousRoundBalance = readJson(PREVIOUS_ROUND_BALANCE).balance;
 
   // TODO: check mintedOrders to see if they're complete
@@ -267,11 +267,11 @@ const enterCommand = (url: string, rl: any) => {
       }
 
       // ** If balance changed, we check mintedOrders for tx finality ** //
-      if (balance !== previousRoundBalance) {
+      if (balance.toNumber() !== previousRoundBalance) {
         mintedOrders = await updateMintedOrders(mintedOrders);
         previousRoundBalance = balance;
-        saveJson(MINTED_ORDERS_FILE, JSON.parse(JSON.stringify(mintedOrders)));
-        const prevBalanceJSON: JSON = JSON.parse(JSON.stringify({ balance: previousRoundBalance }));
+        saveJson(MINTED_ORDERS_FILE, JSON.parse(JSON.stringify({ orders: mintedOrders })));
+        const prevBalanceJSON = JSON.parse(JSON.stringify({ balance: previousRoundBalance }));
         saveJson(PREVIOUS_ROUND_BALANCE, prevBalanceJSON);
       }
 
@@ -325,7 +325,7 @@ const enterCommand = (url: string, rl: any) => {
       for (let i = 0; i < reducedNumToMint; i += 1) {
         // ** Craft the transaction data ** //
         // TODO: refactor this into a function
-        const data = yobotInfiniteMintInterface.encodeFunctionData(
+        const data: any = yobotInfiniteMintInterface.encodeFunctionData(
           'mint',
           [
             EOA_ADDRESS, // address to
