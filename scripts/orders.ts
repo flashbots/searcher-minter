@@ -106,7 +106,7 @@ const fetchOrdersAndBalance = async () => {
   console.log('Number of ERC721 Tokens left to be minted:', numberERC721Tokens - balance.toNumber());
 };
 
-const INTERVAL = 30_000;
+const INTERVAL = 60_000;
 
 // ** orders Function ** //
 async function orders() {

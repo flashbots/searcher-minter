@@ -49,6 +49,116 @@ const {
   DISCORD_WEBHOOK_URL: discordWebhookUrl,
 } = configure();
 
+// ** Sends a Fill Order Transaction Bundle ** //
+const sendTransactionBundle = async (group: any, currentFillingOrders: any, currentFillingOrderTokenIds: any) => {
+  // ** Craft a signed bundle of transactions ** //
+  const {
+    targetBlockNumber,
+    transactionBundle,
+  }: {
+    targetBlockNumber: number,
+    transactionBundle: string[]
+  } = await craftBundle(
+    provider,
+    fbp,
+    blocksUntilInclusion,
+    group,
+  );
+
+  // ** Simulate Bundle ** //
+  console.log('Simulating Fill Order Bundle: ', transactionBundle);
+  console.log('Targeting block:', targetBlockNumber);
+  let simulation;
+  try {
+    simulation = await simulateBundle(
+      fbp,
+      targetBlockNumber,
+      transactionBundle,
+    );
+  } catch (e) {
+    console.error('Simulation Error:', e);
+    await postDiscord(
+      discordWebhookUrl,
+      `❌ FILL ORDER SIMULATION ERRORED ❌ Response=${JSON.stringify(e.body)}`,
+    );
+    fillingLocked = false;
+    return;
+  }
+
+  console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
+
+  // ** Send Bundle to Flashbots ** //
+  if (validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
+    await postDiscord(
+      discordWebhookUrl,
+      '✅ FILL ORDER SIMULATION SUCCESSFUL ✅',
+    );
+    await postDiscord(
+      discordWebhookUrl,
+      `💨 SENDING FILL ORDER FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${group.length}`,
+    );
+    const bundleRes = await sendFlashbotsBundle(
+      fbp,
+      targetBlockNumber,
+      group,
+    );
+
+    console.log('Bundle response:', JSON.stringify(bundleRes));
+    const didBundleError = validateSubmitResponse(bundleRes);
+    console.error(`Did bundle submission error: ${didBundleError}`);
+
+    await postDiscord(
+      discordWebhookUrl,
+      `🚀 FILL ORDER BUNDLE SENT - ${JSON.stringify(bundleRes)}`,
+    );
+
+    // ** Wait the response ** //
+    const simulatedBundleRes = await (bundleRes as FlashbotsTransactionResponse).simulate();
+    console.log('Simulated bundle response:', JSON.stringify(simulatedBundleRes));
+    const awaiting = await (bundleRes as FlashbotsTransactionResponse).wait();
+    console.log('Awaited response:', JSON.stringify(awaiting));
+
+    await postDiscord(
+      discordWebhookUrl,
+      `🎉 AWAITED FILL ORDER BUNDLE RESPONSE - ${JSON.stringify(simulatedBundleRes)}`,
+    );
+
+    // ** User Stats isn't implemented on goerli ** //
+    if (chainId !== 5) {
+      // ** Get Bundle Stats ** //
+      // @ts-ignore
+      // const bundleStats = await fbp.getBundleStats(simulation.bundleHash, targetBlockNumber);
+      // console.log('Bundle stats:', JSON.stringify(bundleStats));
+
+      const searcherStats = await fbp.getUserStats();
+      console.log('User stats:', JSON.stringify(searcherStats));
+
+      await postDiscord(
+        discordWebhookUrl,
+        `👑 SEARCHER STATS: ${JSON.stringify(searcherStats)}`,
+      );
+    }
+
+    // ** Get Order Results ** //
+    const ordersRes = 'results' in Object.keys(simulatedBundleRes) ? (simulatedBundleRes as SimulationResponseSuccess).results : [];
+    console.log('Got results from simulation response:', ordersRes);
+
+    // ** Add to fillingOrders ** //
+    fillingOrders = fillingOrders.concat(currentFillingOrders);
+    fillingOrderTokenIds = fillingOrderTokenIds.concat(currentFillingOrderTokenIds);
+  } else {
+    console.log('Simulation failed, discarding bundle...');
+    await postDiscord(
+      discordWebhookUrl,
+      '❌ FILL ORDER SIMULATION FAILED - DISCARDING BUNDLE ❌',
+    );
+  }
+};
+
+// ****************************** //
+// ** Fill Order Worker Thread ** //
+// ****************************** //
+
 fillOrdersParent.on('message', async (data: any) => {
   if (data.type === 'fill') {
     // ** Fill Orders if not already filling ** //
@@ -77,11 +187,12 @@ fillOrdersParent.on('message', async (data: any) => {
       const blockGasLimit = block.gasLimit;
 
       // ** Craft the Transactions to Bundle ** //
-      const currentFillingOrders: FillingOrder[] = []; // orders that we placed to fill
-      const currentFillingOrderTokenIds: string[] = []; // tokenIds that we placed to fill
+      const currentFillingOrders: FillingOrder[][] = []; // orders that we placed to fill
+      const currentFillingOrderTokenIds: string[][] = []; // tokenIds that we placed to fill
       let tokenIdNum = 0;
-      const transactions: any[] = [];
+      const transactionGroups: any[][] = [];
       let cumulativeGasCost = BigNumber.from(0);
+      let txgroupSizeLimit = 2; // The maximum number of transactions per bundle (can be less if we hit the bundle gas limit)
       for (const order of remainingOrders) {
         if (
           tokenIdNum < tokens.length // If we have enough tokens in our wallet
@@ -110,8 +221,8 @@ fillOrdersParent.on('message', async (data: any) => {
           }
 
           if (cumulativeGasCost.add(gasEstimate).gt(blockGasLimit)) {
-            console.log('Gas limit reached, sending a fill order bundle with tx count:', transactions.length);
-            break;
+            console.log('Gas limit reached, creating a new transaction group:', cumulativeGasCost.add(gasEstimate).toNumber());
+            txgroupSizeLimit = transactionGroups[transactionGroups.length - 1].length;
           } else {
             cumulativeGasCost = cumulativeGasCost.add(gasEstimate);
           }
@@ -129,128 +240,48 @@ fillOrdersParent.on('message', async (data: any) => {
             txdata,
             BigNumber.from(0), // value in wei
           );
-          transactions.push(tx);
-
-          // ** Add to the current filling orders ** //
-          currentFillingOrders.push({
-            orderId: order.orderId,
-            tokenId: tokens[tokenIdNum],
-          });
-          currentFillingOrderTokenIds.push(tokens[tokenIdNum]);
+          // ** Push into a tx group - only 2 transactions per group to minimize bundling to increase chance of landing ** //
+          if (transactionGroups[transactionGroups.length - 1].length >= txgroupSizeLimit) {
+            txgroupSizeLimit = 2;
+            // ** Reset the cumulative gas cost when we hit the limit ** //
+            cumulativeGasCost = BigNumber.from(0);
+            transactionGroups.push([tx]);
+            // ** Add to the current filling orders ** //
+            currentFillingOrders.push([{
+              orderId: order.orderId,
+              tokenId: tokens[tokenIdNum],
+            }]);
+            currentFillingOrderTokenIds.push([tokens[tokenIdNum]]);
+          } else {
+            transactionGroups[transactionGroups.length - 1].push(tx);
+            // ** Add to the current filling orders ** //
+            currentFillingOrders[currentFillingOrders.length - 1].push({
+              orderId: order.orderId,
+              tokenId: tokens[tokenIdNum],
+            });
+            currentFillingOrderTokenIds[currentFillingOrderTokenIds.length - 1].push(tokens[tokenIdNum]);
+          }
         }
         tokenIdNum += 1;
       }
 
-      console.log('Transactions:', transactions.length);
+      console.log('Transaction Groups:', transactionGroups.length);
+      console.log('Max transactions:', transactionGroups.length * 2);
 
       // !! If we don't have any transactions, we can break here !! //
-      if (transactions.length <= 0) {
+      if (transactionGroups.length <= 0) {
         console.log('No bundle transactions, leaving fillOrders worker');
         fillingLocked = false;
         return;
       }
       // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! //
 
-      // ** Craft a signed bundle of transactions ** //
-      const {
-        targetBlockNumber,
-        transactionBundle,
-      }: {
-        targetBlockNumber: number,
-        transactionBundle: string[]
-      } = await craftBundle(
-        provider,
-        fbp,
-        blocksUntilInclusion,
-        transactions,
-      );
-
-      // ** Simulate Bundle ** //
-      console.log('Simulating Fill Order Bundle: ', transactionBundle);
-      console.log('Targeting block:', targetBlockNumber);
-      let simulation;
-      try {
-        simulation = await simulateBundle(
-          fbp,
-          targetBlockNumber,
-          transactionBundle,
-        );
-      } catch (e) {
-        console.error('Simulation Error:', e);
-        await postDiscord(
-          discordWebhookUrl,
-          `❌ FILL ORDER SIMULATION ERRORED ❌ Response=${JSON.stringify(e.body)}`,
-        );
-        fillingLocked = false;
-        return;
-      }
-
-      console.log('Got Flashbots simulation:', JSON.stringify(simulation, null, 2));
-
-      // ** Send Bundle to Flashbots ** //
-      if (validateSimulation(simulation)) { // validateSimulation returns true if the simulation errored
-        await postDiscord(
-          discordWebhookUrl,
-          '✅ FILL ORDER SIMULATION SUCCESSFUL ✅',
-        );
-        await postDiscord(
-          discordWebhookUrl,
-          `💨 SENDING FILL ORDER FLASHBOTS BUNDLE :: Block Target=${targetBlockNumber}, Transaction Count=${transactions.length}`,
-        );
-        const bundleRes = await sendFlashbotsBundle(
-          fbp,
-          targetBlockNumber,
-          transactions,
-        );
-
-        console.log('Bundle response:', JSON.stringify(bundleRes));
-        const didBundleError = validateSubmitResponse(bundleRes);
-        console.error(`Did bundle submission error: ${didBundleError}`);
-
-        await postDiscord(
-          discordWebhookUrl,
-          `🚀 FILL ORDER BUNDLE SENT - ${JSON.stringify(bundleRes)}`,
-        );
-
-        // ** Wait the response ** //
-        const simulatedBundleRes = await (bundleRes as FlashbotsTransactionResponse).simulate();
-        console.log('Simulated bundle response:', JSON.stringify(simulatedBundleRes));
-        const awaiting = await (bundleRes as FlashbotsTransactionResponse).wait();
-        console.log('Awaited response:', JSON.stringify(awaiting));
-
-        await postDiscord(
-          discordWebhookUrl,
-          `🎉 AWAITED FILL ORDER BUNDLE RESPONSE - ${JSON.stringify(simulatedBundleRes)}`,
-        );
-
-        // ** User Stats isn't implemented on goerli ** //
-        if (chainId !== 5) {
-          // ** Get Bundle Stats ** //
-          // @ts-ignore
-          // const bundleStats = await fbp.getBundleStats(simulation.bundleHash, targetBlockNumber);
-          // console.log('Bundle stats:', JSON.stringify(bundleStats));
-
-          const searcherStats = await fbp.getUserStats();
-          console.log('User stats:', JSON.stringify(searcherStats));
-
-          await postDiscord(
-            discordWebhookUrl,
-            `👑 SEARCHER STATS: ${JSON.stringify(searcherStats)}`,
-          );
-        }
-
-        // ** Get Order Results ** //
-        const ordersRes = 'results' in Object.keys(simulatedBundleRes) ? (simulatedBundleRes as SimulationResponseSuccess).results : [];
-        console.log('Got results from simulation response:', ordersRes);
-
-        // ** Add to fillingOrders ** //
-        fillingOrders = fillingOrders.concat(currentFillingOrders);
-        fillingOrderTokenIds = fillingOrderTokenIds.concat(currentFillingOrderTokenIds);
-      } else {
-        console.log('Simulation failed, discarding bundle...');
-        await postDiscord(
-          discordWebhookUrl,
-          '❌ FILL ORDER SIMULATION FAILED - DISCARDING BUNDLE ❌',
+      // ** For each group of transactions, send a flashbots bundle ** //
+      for (const group of transactionGroups) {
+        await sendTransactionBundle(
+          group, // The group of transactions
+          currentFillingOrders, // The current orders being filled
+          currentFillingOrderTokenIds, // The current tokenIds being filled
         );
       }
 
