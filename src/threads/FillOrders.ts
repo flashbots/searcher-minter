@@ -81,7 +81,7 @@ const sendTransactionBundle = async (group: any, currentFillingOrders: any, curr
       discordWebhookUrl,
       `❌ FILL ORDER SIMULATION ERRORED ❌ Response=${JSON.stringify(e.body)}`,
     );
-    fillingLocked = false;
+    // fillingLocked = false;
     return;
   }
 

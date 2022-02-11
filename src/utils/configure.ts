@@ -93,7 +93,7 @@ const configure = () => {
   // ** Define Lindy Constants ** //
   const ETHER = BigNumber.from(10).pow(18);
   const GWEI = BigNumber.from(10).pow(9);
-  const PRIORITY_FEE = GWEI.mul(3);
+  const PRIORITY_FEE = GWEI.mul(5);
   const LEGACY_GAS_PRICE = GWEI.mul(12);
   const BLOCKS_TILL_INCLUSION = 2;
 
