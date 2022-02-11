@@ -250,7 +250,7 @@ fillOrdersParent.on('message', async (data: any) => {
         console.log('Simulation failed, discarding bundle...');
         await postDiscord(
           discordWebhookUrl,
-          '❌ SFILL ORDER IMULATION FAILED - DISCARDING BUNDLE ❌',
+          '❌ FILL ORDER SIMULATION FAILED - DISCARDING BUNDLE ❌',
         );
       }
 

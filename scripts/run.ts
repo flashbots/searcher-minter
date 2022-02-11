@@ -123,8 +123,6 @@ const enterCommand = (url: string, rl: any) => {
   mintedOrders = readJson(MINTED_ORDERS_FILE).orders;
   previousRoundBalance = readJson(PREVIOUS_ROUND_BALANCE).balance;
 
-  // TODO: check mintedOrders to see if they're complete
-
   // TODO: Check if abi function signatures are defined by environment variables!
 
   // ** Checks if our pending ERC721 mints are completed (would result in double count since balance increments too) ** //
@@ -133,10 +131,14 @@ const enterCommand = (url: string, rl: any) => {
 
     // ** Iterate mintedOrders and check status ** //
     for (const mo of mOrders) {
-      console.log('mintedOrder:', mo);
       const checkedTxn = await checkTxn(mo.txHash, provider);
       // ** If the transaction hasn't landed yet, add back to pending orders ** //
-      if (!checkedTxn) updatedOrders.push(mo);
+      if (!checkedTxn) {
+        // ** Only keep the order if the transaction has been hanging for less than 30 seconds ** //
+        if (Date.now() - mo.timestamp < (30 * 1_000)) {
+          updatedOrders.push(mo);
+        }
+      }
     }
 
     return updatedOrders;
@@ -177,7 +179,7 @@ const enterCommand = (url: string, rl: any) => {
       console.log(`   ├─ Timestamp: ${result.timestamp}`);
       console.log(`   └─ Network: ${result.network}`);
       console.log('-----------------------------------------');
-      await postDiscord(discordWebhookUrl, `📦 [${transactionCount}] MEMPOOL TRANSACTION DETECTED [${result.direction.toUpperCase()}] 📦`);
+      await postDiscord(discordWebhookUrl, `📦 [${transactionCount}] [${result.status}] MEMPOOL TRANSACTION DETECTED [${result.direction.toUpperCase()}] 📦`);
     }
 
     if (!mintingLocked) {
@@ -484,10 +486,13 @@ const enterCommand = (url: string, rl: any) => {
         }
 
         // ** Loop over the simulatedBundleRes.results and add gas cost to orders ** //
-        const gasOrders = 'results' in simulatedBundleRes ? (simulatedBundleRes as SimulationResponseSuccess).results : [];
+        let gasOrders = 'results' in simulatedBundleRes ? (simulatedBundleRes as SimulationResponseSuccess).results : [];
 
         console.log('Is results in simulated bundle response:', 'results' in simulatedBundleRes);
         console.log('Gas orders:', JSON.stringify(gasOrders));
+
+        // ** Append timestamp to orders so we can remove hanging orders ** //
+        gasOrders = gasOrders.map((o) => ({ timestamp: Date.now(), ...o }));
 
         // ** Add these to the minted orders ** //
         mintedOrders = [...mintedOrders, ...gasOrders];

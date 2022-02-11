@@ -41,7 +41,7 @@ const INTERVAL = 15_000;
 // ** Main Function ** //
 async function main() {
   console.log(`Setting up inventory fetching on a ${INTERVAL / 1000} second interval...`);
-  // ** Fatch Balance and tokens on a 10 second interval ** //
+  // ** Fatch Balance and tokens on a 15 second interval ** //
   setInterval(async () => {
     await fetchBalanceAndTokens();
   }, INTERVAL);

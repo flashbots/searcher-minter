@@ -2,9 +2,11 @@
 /* eslint-disable no-console */
 import { BigNumber } from 'ethers';
 import {
+  callBalance,
   callOrders,
   compareOrderEvents,
-  configure, fetchSortedOrders,
+  configure,
+  fetchSortedOrders,
 } from '../src/utils';
 
 require('dotenv').config();
@@ -12,32 +14,35 @@ require('dotenv').config();
 const sortOrders = (verifiedOrders: any[]) => {
   // ** Try to parse verified orders as big numbers ** //
   verifiedOrders.sort((a, b) => {
-    console.log('a.priceInWeiEach:', a.priceInWeiEach);
-    console.log('b.priceInWeiEach:', b.priceInWeiEach);
-
     // ** Parse strings as big numbers ** //
     const bp = BigNumber.from(b.priceInWeiEach);
     const ap = BigNumber.from(a.priceInWeiEach);
-    console.log('a.priceInWeiEach:', ap);
-    console.log('b.priceInWeiEach:', bp);
-
     return bp.sub(ap).gt(1) ? 1 : -1;
   });
 
   return verifiedOrders;
 };
 
-// ** orders Function ** //
-async function orders() {
-  console.log('Fetching outstanding bids from Yobot ERC721 Limit Order Contract...');
+// ** Configure ** //
+const {
+  provider,
+  EOA_ADDRESS,
+  MINTING_CONTRACT,
+  YobotERC721LimitOrderContract: yobotERC721LimitOrderContract,
+  YobotERC721LimitOrderInterface: yobotERC721LimitOrderInterface,
+} = configure();
 
-  // ** Configure ** //
-  const {
+const fetchBalanceAndTokens = async () => {
+  // ** Fetch the Balance of the searcher ** //
+  const balance = await callBalance(
+    MINTING_CONTRACT,
+    EOA_ADDRESS,
     provider,
-    YobotERC721LimitOrderContract: yobotERC721LimitOrderContract,
-    YobotERC721LimitOrderInterface: yobotERC721LimitOrderInterface,
-  } = configure();
+  );
+  return balance;
+};
 
+const fetchOrdersAndBalance = async () => {
   // ** Fetch Sorted Orders ** //
   const events = await fetchSortedOrders(
     yobotERC721LimitOrderContract,
@@ -80,8 +85,6 @@ async function orders() {
     }
   }
 
-  console.log('Verified Orders:', verifiedOrders);
-
   // ** Sort the orders in a separate function ** //
   sortOrders(verifiedOrders);
 
@@ -92,10 +95,29 @@ async function orders() {
     return bp.sub(ap).gt(1) ? 1 : -1;
   });
 
+  // ** Get the total number of erc721 tokens left to mint using order quantities ** //
+  const numberLeftToMint = verifiedOrders.map((o) => parseInt(o.quantity, 10));
+  const numberERC721Tokens = numberLeftToMint.reduce((a, b) => a + b, 0);
+  console.log('Number of ERC721 Tokens in outstanding orders:', numberERC721Tokens);
 
-  const numberLeftToMint = filteredOrders.map((o) => o.quantity).reduce((a, b) => a + b, 0) - inventoryQty;
+  // ** Get searcher balance and use as inventory - ignore currently minting ** //
+  const balance = await fetchBalanceAndTokens();
+  console.log('Searcher Balance:', balance.toNumber());
+  console.log('Number of ERC721 Tokens left to be minted:', numberERC721Tokens - balance.toNumber());
+};
 
-  return 1;
+const INTERVAL = 30_000;
+
+// ** orders Function ** //
+async function orders() {
+  console.log(`Setting up order fetching on a ${INTERVAL / 1000} second interval...`);
+
+  // ** Fatch orders on a 20 second interval ** //
+  setInterval(async () => {
+    console.log('[TRIGGER] Order Fetching Interval Triggered');
+    await fetchOrdersAndBalance();
+  }, INTERVAL);
+  await fetchOrdersAndBalance();
 }
 
 orders();
