@@ -42,14 +42,24 @@ const configure = () => {
   const CHAIN_ID = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID, 10) : 5;
   // console.log('Using CHAIN ID:', CHAIN_ID);
 
-  // ** Set up an Infura Provider ** //
-  const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
+  // // ** Set up an Infura Provider ** //
+  // const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
+
+  // ** Setup Alchemy Provider ** //
+  // const provider = new providers.AlchemyProvider(CHAIN_ID, process.env.ALCHEMY_API_KEY);
 
   // ** Configure Flashbots Relay Endpoint ** //
   const flashbotsEndpoint = CHAIN_ID === 1 ? 'https://relay.flashbots.net' : 'https://relay-goerli.flashbots.net';
 
+  // ** Using multiple api keys for the provider will be more performant ** //
+  const defaultProvider = providers.getDefaultProvider(CHAIN_ID, {
+    etherscan: process.env.ETHERSCAN_API_KEY,
+    infura: process.env.INFURA_PROJECT_ID,
+    alchemy: process.env.ALCHEMY_API_KEY,
+  });
+  const provider = defaultProvider;
+
   // ** Setup the wallet ** //
-  const defaultProvider = providers.getDefaultProvider(CHAIN_ID); // 'goerli');
   const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, defaultProvider);
 
   // ** Import the Yobot Abis ** //
@@ -83,7 +93,7 @@ const configure = () => {
   // ** Define Lindy Constants ** //
   const ETHER = BigNumber.from(10).pow(18);
   const GWEI = BigNumber.from(10).pow(9);
-  const PRIORITY_FEE = GWEI.mul(3);
+  const PRIORITY_FEE = GWEI.mul(5);
   const LEGACY_GAS_PRICE = GWEI.mul(12);
   const BLOCKS_TILL_INCLUSION = 2;
 

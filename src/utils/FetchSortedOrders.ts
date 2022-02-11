@@ -1,5 +1,5 @@
 /* eslint-disable no-underscore-dangle */
-import { providers } from 'ethers';
+import { BaseProvider } from '@ethersproject/providers';
 
 import { filterEvents, fetchAllERC721LimitOrderEvents, fetchLatestOrders } from '.';
 
@@ -7,7 +7,7 @@ import { filterEvents, fetchAllERC721LimitOrderEvents, fetchLatestOrders } from 
 const fetchSortedOrders = async (
   ERC721LimitOrderContract: any,
   filterStartBlock: number,
-  provider: providers.InfuraProvider,
+  provider: BaseProvider,
   ERC721LimitOrderInterface: any,
 ) => {
   // ** Get all ERC721LimitOrder events ** //

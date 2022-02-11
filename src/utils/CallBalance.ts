@@ -1,7 +1,7 @@
 /* eslint-disable import/prefer-default-export */
 /* eslint-disable no-multiple-empty-lines */
 /* eslint-disable spaced-comment */
-import { InfuraProvider } from '@ethersproject/providers';
+import { BaseProvider } from '@ethersproject/providers';
 import { Contract } from 'ethers';
 
 // ** ///////////////////////////////// ** //
@@ -12,7 +12,7 @@ import { Contract } from 'ethers';
 const callBalance = async (
   contract: string,
   address: string,
-  provider: InfuraProvider,
+  provider: BaseProvider,
 ) => {
   const mintContract = new Contract(contract, ['function balanceOf(address) public view returns (uint256)'], provider);
   const [balance] = await mintContract.functions.balanceOf(address);

@@ -1,8 +1,8 @@
 import { FlashbotsBundleProvider, FlashbotsBundleRawTransaction, FlashbotsBundleTransaction } from '@flashbots/ethers-provider-bundle';
-import { Web3Provider, InfuraProvider } from '@ethersproject/providers';
+import { BaseProvider } from '@ethersproject/providers';
 
 const craftBundle = async (
-  provider: Web3Provider | InfuraProvider,
+  provider: BaseProvider,
   flashbotsProvider: FlashbotsBundleProvider,
   blocks_until_inclusion: number,
   bundledTransactions: (FlashbotsBundleTransaction | FlashbotsBundleRawTransaction)[],

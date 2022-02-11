@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 import { FlashbotsBundleProvider, FlashbotsBundleRawTransaction, FlashbotsBundleTransaction } from '@flashbots/ethers-provider-bundle';
-import { Web3Provider, InfuraProvider } from '@ethersproject/providers';
+import { BaseProvider } from '@ethersproject/providers';
 import { BigNumber, Wallet } from 'ethers';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { TransactionRequest } from '@ethersproject/abstract-provider';
 
 const craftTransaction = async (
-  provider: Web3Provider | InfuraProvider,
+  provider: BaseProvider,
   wallet: Wallet,
   chainId: number,
   blocks_until_inclusion: number,
@@ -19,10 +19,8 @@ const craftTransaction = async (
   value: BigNumber,
 ): Promise<FlashbotsBundleTransaction | FlashbotsBundleRawTransaction> => {
   const currentBlockNumber = await provider.getBlockNumber();
-  console.log('Got current block number:', currentBlockNumber);
 
   const block = await provider.getBlock(currentBlockNumber);
-  console.log('Got current block:', block);
 
   const legacyTransaction = {
     to,
@@ -32,7 +30,6 @@ const craftTransaction = async (
     nonce: await provider.getTransactionCount(wallet.address),
     value,
   };
-  console.log('Created legacy transaction:', legacyTransaction);
 
   let eip1559Transaction: TransactionRequest;
   if (block.baseFeePerGas == null) {
@@ -51,13 +48,12 @@ const craftTransaction = async (
       type: 2,
       maxFeePerGas: priority_fee.add(maxBaseFeeInFutureBlock),
       maxPriorityFeePerGas: priority_fee,
-      gasLimit: gasLimit.gt(0) ? gasLimit : block.gasLimit,
+      gasLimit: gasLimit.gt(0) ? gasLimit : block.gasLimit.sub(block.gasLimit.div(20)),
       data,
       chainId,
       value,
     };
   }
-  console.log('Eip1559 transaction:', eip1559Transaction);
 
   return {
     signer: wallet,

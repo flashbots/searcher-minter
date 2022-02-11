@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
-import { InfuraProvider } from '@ethersproject/providers';
+import { BaseProvider } from '@ethersproject/providers';
 import { BigNumber, Contract } from 'ethers';
 
 const potentialTotalSupplyAbis = [
@@ -32,7 +32,7 @@ const potentialMaxSupplyAbis = [
 
 const extractTotalSupplies = async (
   address: string,
-  provider: InfuraProvider,
+  provider: BaseProvider,
   knownAbi?: string,
 ) => {
   let totalSupply: BigNumber = BigNumber.from(0);
@@ -66,7 +66,7 @@ const extractTotalSupplies = async (
 
 const extractMaxSupplies = async (
   address: string,
-  provider: InfuraProvider,
+  provider: BaseProvider,
   knownAbi?: string,
 ) => {
   let maxSupply: BigNumber = BigNumber.from(0);
