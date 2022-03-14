@@ -1,16 +1,20 @@
 import { providers, Wallet } from "ethers";
 import { FlashbotsBundleProvider } from "@flashbots/ethers-provider-bundle";
+import * as dotenv from 'dotenv';
+import privateKey from './private_key.config'
+
+dotenv.config()
 
 const CHAIN_ID = 5;
 const provider = new providers.InfuraProvider(CHAIN_ID)
 
 const FLASHBOTS_ENDPOINT = "https://relay-goerli.flashbots.net";
 
-if (process.env.WALLET_PRIVATE_KEY === undefined) {
+if (privateKey.private_key=== undefined) {
   console.error("Please provide WALLET_PRIVATE_KEY env")
   process.exit(1)
 }
-const wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, provider)
+const wallet = new Wallet(privateKey.private_key, provider)
 
 // ethers.js can use Bignumber.js class OR the JavaScript-native bigint. I changed this to bigint as it is MUCH easier to deal with
 const GWEI = 10n ** 9n
