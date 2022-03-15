@@ -8,8 +8,13 @@ const createFlashbotsProvider = async (
   wallet: Wallet,
 ): Promise<FlashbotsBundleProvider> => {
   // ** Create Flashbots Provider ** //
-  // const defaultGoerliProvider = providers.getDefaultProvider('goerli');
-  const flashbotsProvider = await FlashbotsBundleProvider.create(provider, wallet, flashbots_endpoint, 'goerli');
+  const network = await provider.getNetwork();
+  const flashbotsProvider = await FlashbotsBundleProvider.create(
+    provider,
+    wallet,
+    flashbots_endpoint,
+    network.name,
+  );
 
   return flashbotsProvider;
 };

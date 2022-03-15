@@ -6,6 +6,7 @@
 /* eslint-disable no-console */
 import { BigNumber } from 'ethers';
 import { FlashbotsTransactionResponse, SimulationResponseSuccess } from '@flashbots/ethers-provider-bundle';
+import { Interface } from 'ethers/lib/utils';
 import { YobotBid } from '../src/types';
 import {
   craftTransaction,
@@ -76,6 +77,7 @@ const enterCommand = (url: string, rl: any) => {
     flashbotsEndpoint,
     wallet,
     EOA_ADDRESS,
+    MINTING_ABI,
     CHAIN_ID: chainId,
     BLOCKS_TILL_INCLUSION: blocksUntilInclusion,
     LEGACY_GAS_PRICE: legacyGasPrice,
@@ -93,6 +95,7 @@ const enterCommand = (url: string, rl: any) => {
     flashbotsEndpoint,
     wallet,
   );
+  console.log('Created Flashbots Provider...');
 
   // ** STATE ** //
   let orderUpdateCount = 0;
@@ -108,20 +111,25 @@ const enterCommand = (url: string, rl: any) => {
   let walletTokens: any[] = []; // The tokens in the wallet
   let isTotalSupplyDerived: boolean = false;
   let derivedTotalSupply: number = 0;
+  console.log('State configured...');
 
   // ** ///////////////////////////////////////// ** //
   // **              Define Workers               ** //
   // ** ///////////////////////////////////////// ** //
 
+  console.log('Creating worker threads...');
   const mempoolWorker = new Worker('./src/threads/Mempool.js');
   const walletWorker = new Worker('./src/threads/Wallet.js');
   const ordersWorker = new Worker('./src/threads/Orders.js');
   const intervalWorker = new Worker('./src/threads/Interval.js');
   const fillOrdersWorker = new Worker('./src/threads/FillOrders.js');
+  console.log('Created workers!');
 
   // ** Read stashed mintedOrders ** //
   mintedOrders = readJson(MINTED_ORDERS_FILE).orders;
   previousRoundBalance = readJson(PREVIOUS_ROUND_BALANCE).balance;
+  console.log('Read minted orders:', mintedOrders.length);
+  console.log('Read previous round balance:', previousRoundBalance);
 
   // TODO: Check if abi function signatures are defined by environment variables!
 
@@ -166,6 +174,7 @@ const enterCommand = (url: string, rl: any) => {
   // ** ///////////////////////////////////////// ** //
 
   const mintHandler = async (result: any) => {
+    console.log('Inside mint handler...');
     if (result !== 'TIME_GRANULARITY') {
       transactionCount += 1;
       console.log('-----------------------------------------');
@@ -325,17 +334,20 @@ const enterCommand = (url: string, rl: any) => {
       const transactions: any[] = [];
       let cumulativeGasCost = BigNumber.from(0);
       // for (let i = 0; i < reducedNumToMint; i += 1) {
-      for (let i = 0; i < 2; i += 1) {
+      for (let i = 0; i < 1; i += 1) {
         // ** Craft the transaction data ** //
         // TODO: refactor this into a function
-        const data: any = yobotInfiniteMintInterface.encodeFunctionData(
-          'mint',
-          [
-            EOA_ADDRESS, // address to
-            mintingTotalSupply + i,
-            // ethers.utils.randomBytes(32), // uint256 tokenId
-          ],
-        );
+        // const data: any = yobotInfiniteMintInterface.encodeFunctionData(
+        //   'mint',
+        //   [
+        //     EOA_ADDRESS, // address to
+        //     // mintingTotalSupply + i,
+        //     // ethers.utils.randomBytes(32), // uint256 tokenId
+        //   ],
+        // );
+        console.log('Minting abi:', MINTING_ABI);
+        const data: string = new Interface([MINTING_ABI]).encodeFunctionData('mint', [EOA_ADDRESS]);
+
         console.log('Crafting transaction with token id:', totalSupply.toNumber() + i);
 
         // ** Estimating tx gas ** //

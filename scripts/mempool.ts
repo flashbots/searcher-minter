@@ -35,6 +35,7 @@ const handleTransaction = (event: any) => {
 
 // ** Main Function ** //
 async function main() {
+  console.log('Inside mempool listener thread...');
   // ** Configure ** //
   const {
     CHAIN_ID,

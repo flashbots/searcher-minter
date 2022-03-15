@@ -40,7 +40,7 @@ const configure = () => {
 
   // ** Default to Goerli if no chain id provided **
   const CHAIN_ID = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID, 10) : 5;
-  // console.log('Using CHAIN ID:', CHAIN_ID);
+  console.log('Using CHAIN ID:', CHAIN_ID);
 
   // // ** Set up an Infura Provider ** //
   // const provider = new providers.InfuraProvider(CHAIN_ID, process.env.INFURA_PROJECT_ID);
